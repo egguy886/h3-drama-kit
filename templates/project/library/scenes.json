@@ -1,0 +1,11 @@
+{
+ "_说明": "场景标准描述 + 布局块（同一场景所有段一字不改）。参考图：3/4 高机位、一个空间锚点、单一光源、无人；可变物体（门、灯、屏幕）画'动作之前'的状态。白天/夜晚/雨天是不同的场景资产。",
+ "N-ROOFTOP": {
+  "name": "N-ROOFTOP",
+  "name_cn": "雨夜写字楼天台",
+  "en": "the rain-soaked office rooftop shown in {P}: wet concrete reflecting a red neon sign, a squat steel stair hut with a closed grey door, a waist-high parapet along the city edge, humming air-conditioning units and the glittering city skyline beyond",
+  "layout_en": "Layout, fixed in every shot: the stair hut with its closed grey door is at frame-left; the parapet and the city skyline run along frame-right; the red neon sign stands on the far corner behind the parapet.",
+  "cn": "雨夜的写字楼天台：湿水泥地映着红色霓虹，一座矮钢楼梯间（灰门关着），齐腰矮墙沿城市边缘，嗡嗡作响的空调外机，远处城市灯火",
+  "layout_cn": "布局（每个镜头固定）：楼梯间和灰门在画左；矮墙与城市天际线沿画右；红色霓虹招牌在矮墙后的远角。"
+ }
+}

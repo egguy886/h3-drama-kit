@@ -1,0 +1,23 @@
+{
+ "_说明": "表演档案（每个主角一条）：{ACT:名字:键} 在镜头里取一个习惯的英文短句；每镜最多一个（H3 一镜表情节拍超过 2–3 个会被抹平）。",
+ "Mia": {
+  "ids": [
+   "C01"
+  ],
+  "engine_cn": "用冷静压住恐惧；越危险越慢。",
+  "body_en": "weight low and balanced, shoulders squared",
+  "eyes_en": "her eyes reach the target a beat before her head turns",
+  "tics": {
+   "thumb": {
+    "en": "her thumb rubs the edge of the phone once and stops",
+    "cn": "拇指在手机边缘蹭一下停住",
+    "trigger_cn": "压住情绪时"
+   },
+   "jaw": {
+    "en": "her jaw sets once and releases",
+    "cn": "下颌收紧一次再放松",
+    "trigger_cn": "忍下一句话时"
+   }
+  }
+ }
+}

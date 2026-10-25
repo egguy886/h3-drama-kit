@@ -1,0 +1,552 @@
+{
+ "_about": "本剧镜头词库 v1（2026-10-15）。分类与选题参考 Melies《Cinematic Techniques》（melies.co/cinematic-techniques），文字全部自写；英文写法按 H3 官方格式（.agents/skills/h3-prompt-writing/references/base-en.txt §4.2–4.3：运镜 = 类型 + 幅度 + 速度，只在必要时写幅度和速度），一律肯定式。status：ok = 已在本剧出片里用过；trial = 待试拍验证；post = 在后期做，不进 H3 提示词；ban = 本剧不用。用法见 protocols/CINEMATOGRAPHY.md，检查用 tools/shot_lint.py。 2026-10-15 第二轮：竖屏俯仰减量、机位句、切镜必须带来变化等见 CINEMATOGRAPHY §10–11。",
+ "techniques": [
+  {
+   "id": "push_in_slow",
+   "cn": "缓推",
+   "cat": "运镜",
+   "status": "ok",
+   "min_dur": 2.4,
+   "use": "顿悟、揭露真相、关键台词、压迫感逐渐升级",
+   "avoid": "同一段里连用两次；镜头短于 2.4 秒（推不出效果）",
+   "en": "The camera pushes in with small amplitude at slow speed toward {WHO}'s face as {ACTION}.",
+   "example": "E25 Seg5 Mr. Vane 说出撤资条件时，缓推到他的眼睛"
+  },
+  {
+   "id": "pull_out_reveal",
+   "cn": "拉出揭示",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 2.6,
+   "use": "人物发现自己被包围、被孤立；从细节拉到全局交代新信息",
+   "avoid": "拉出后会露出没定义的人或空间（模型会自己补人）",
+   "en": "The camera pulls out with large amplitude at slow speed from {WHO}, revealing {WHAT_SURROUNDS}.",
+   "example": "E29 Ellis 抱头痛哭，镜头拉出露出四周封死的钢闸"
+  },
+  {
+   "id": "track_side",
+   "cn": "侧面跟拍",
+   "cat": "运镜",
+   "status": "ok",
+   "min_dur": 2.0,
+   "use": "赛跑、冲刺、追逐",
+   "avoid": "对白镜头",
+   "en": "The camera tracks alongside {WHO} at fast speed as {ACTION}, {WHO} staying at frame-{SIDE}.",
+   "example": "E30 Seg4 Cade 在暴雨校道上冲刺"
+  },
+  {
+   "id": "track_behind",
+   "cn": "背后跟拍",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 2.4,
+   "use": "跟着人物走进未知空间（管廊、地道、锅炉房），观众和人物同时看到前方",
+   "avoid": "需要看清表情的时候",
+   "en": "The camera tracks behind {WHO} at slow speed as {WHO} moves deeper into {PLACE}, {WHAT_AHEAD} visible ahead.",
+   "example": "E22 三人进入地下管廊"
+  },
+  {
+   "id": "shake_slight",
+   "cn": "手持轻晃",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "惊慌、混乱、被追、推搡",
+   "avoid": "Shake Strongly（大晃会被切点检测当成多余切镜，H3 也容易糊脸）；安静的对白",
+   "en": "The camera shakes slightly as it follows {WHO} {ACTION}.",
+   "example": "E28 安保撞门冲进来"
+  },
+  {
+   "id": "truck_reveal",
+   "cn": "横移揭示",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 2.4,
+   "use": "依次扫过一排东西或人（储物柜、安保队列、证据墙），最后停在关键物上",
+   "avoid": "扫过的人超过 3 个（人数和长相容易乱）",
+   "en": "The camera trucks right with small amplitude at slow speed past {ROW}, settling on {KEY_THING}.",
+   "example": "E26 一排储物柜，停在 Cade 被撬开的那一格"
+  },
+  {
+   "id": "tilt_reveal",
+   "cn": "上摇揭示",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 2.4,
+   "use": "权力人物登场（从皮鞋摇到脸）、高大建筑压迫感（铁门、塔楼）",
+   "avoid": "摇过的区域有文字或屏幕",
+   "en": "The camera tilts up at slow speed from {LOW_DETAIL} to {WHO}'s face.",
+   "example": "E28 Security Chief 登场，从靴子摇到脸"
+  },
+  {
+   "id": "arc_small",
+   "cn": "小幅环绕",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 3.0,
+   "use": "两人对峙的最高点、关系反转的一刻；一集最多一次",
+   "avoid": "大幅环绕（背景会重画，人物脸会漂）；三人以上",
+   "en": "The camera arcs with small amplitude at slow speed around {A} and {B}, keeping {A} at frame-left and {B} at frame-right.",
+   "example": "E27 Cade 与 Ellis 摊牌"
+  },
+  {
+   "id": "pov",
+   "cn": "主观镜头",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "人物看到的东西：激光点、账本某一页、门缝外的靴子",
+   "avoid": "看的是带文字的屏幕或纸（文字后期叠，主观镜头里留空白版式）",
+   "en": "POV from {WHO}: {WHAT_SEEN}, the frame moving gently with {WHO}'s breathing.",
+   "example": "E21 Seg8 Cade 看着红点滑过墙面"
+  },
+  {
+   "id": "low_angle",
+   "cn": "仰拍",
+   "cat": "角度",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "权力与威胁：Mr. Vane、Security Chief、Avery；主角夺回主动权的瞬间",
+   "avoid": "所有人都仰拍（失去对比）；竖屏里仰角比横屏强烈得多，平常用 slightly low-angle，大仰角只留给全集最强的一两个点（CINEMATOGRAPHY §10.4）",
+   "en": "a slightly low-angle medium shot looks up at {WHO}, {LIGHT_ON_FACE}, {WHO}'s eyes down on {TARGET}.",
+   "example": "E25 Mr. Vane 坐在桌后，仰拍压迫"
+  },
+  {
+   "id": "high_angle",
+   "cn": "俯拍",
+   "cat": "角度",
+   "status": "ok",
+   "min_dur": 1.6,
+   "use": "弱势、崩溃、被困：Ellis 跪在水里、Cade 被围",
+   "avoid": "人物在画面里太小（LESSONS B3：大俯拍里模型会画错衣服）；用中景俯拍；竖屏里俯角同样更强烈，平常用 slightly high-angle",
+   "en": "a high-angle medium shot looks down on {WHO} {STATE}, {WHO}'s eyes up toward {TARGET}.",
+   "example": "E29 Ellis 跪在锅炉房水泊里"
+  },
+  {
+   "id": "ots",
+   "cn": "过肩",
+   "cat": "角度",
+   "status": "trial",
+   "min_dur": 2.0,
+   "use": "对峙、谈判、逼问；同时交代两人位置，接下来的反打镜头站位不会乱",
+   "avoid": "越轴：A 在画左就一直在画左，反打从 B 的肩后拍、B 在画右",
+   "en": "an over-the-shoulder shot from behind {A}'s shoulder at frame-left frames {B} at frame-right facing {A}, {A}'s shoulder and the back of {A}'s head soft in the foreground.",
+   "example": "E23 Avery 逼问 Sonia"
+  },
+  {
+   "id": "foreground_frame",
+   "cn": "前景框住",
+   "cat": "构图",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "被监视、被困、隔阂：隔着钢网、铁栅门、门缝、玻璃拍",
+   "avoid": "前景物占画面过多遮住脸",
+   "en": "framed through {FOREGROUND} soft in the foreground, {WHO} sharp behind it {ACTION}.",
+   "example": "E29 隔着钢网拍 Ellis"
+  },
+  {
+   "id": "negative_space",
+   "cn": "负空间",
+   "cat": "构图",
+   "status": "trial",
+   "min_dur": 2.0,
+   "use": "孤独、失去一切、集尾停留",
+   "avoid": "空出来的区域有可以被模型补人的门或走廊",
+   "en": "a wide static shot places {WHO} small at frame-{SIDE}, the rest of the frame filled with {EMPTY_SPACE}.",
+   "example": "E30 Cade 被开除后独自站在校门外的雨里"
+  },
+  {
+   "id": "rack_focus",
+   "cn": "转焦",
+   "cat": "焦点",
+   "status": "trial",
+   "min_dur": 2.4,
+   "use": "道具 → 人脸（钥匙、U 盘、账本、文件），一个镜头顶两个镜头；焦外的文件也方便后期叠字",
+   "avoid": "镜头里同时要看清两张脸；要叠字的文字面朝镜头且清楚（转焦后会糊）",
+   "en": "a static close shot with shallow depth of field holds {OBJECT} sharp in the foreground and {WHO} soft behind; the focus shifts from {OBJECT} to {WHO}'s face, {OBJECT} melting into blur.",
+   "example": "E26 桌上的 U 盘 → Nia 的脸"
+  },
+  {
+   "id": "shallow_dof",
+   "cn": "浅景深",
+   "cat": "焦点",
+   "status": "ok",
+   "min_dur": 1.0,
+   "use": "对白近景把背景虚掉，减少背景里的错误细节",
+   "avoid": "首秒定位全景（要看清空间）",
+   "en": "a close-up with shallow depth of field, the background melting into soft blur.",
+   "example": "大部分对白近景"
+  },
+  {
+   "id": "silhouette",
+   "cn": "逆光剪影",
+   "cat": "光",
+   "status": "ok",
+   "min_dur": 1.6,
+   "use": "威胁人物出现在门口、强光中的身影、集尾悬念",
+   "avoid": "这个人第一次登场又需要观众认出脸",
+   "en": "{WHO} stands backlit in {OPENING}, a dark silhouette rimmed by {LIGHT_SOURCE}.",
+   "example": "E28 安保站在手电光里"
+  },
+  {
+   "id": "half_face",
+   "cn": "侧光半脸",
+   "cat": "光",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "动摇、背叛、两难：Ellis 的选择、Sonia 的隐瞒",
+   "avoid": "整段都这样打光（会显得脏）",
+   "en": "hard side light from {SOURCE} leaves half of {WHO}'s face in deep shadow.",
+   "example": "E27 Ellis 犹豫要不要交出硬盘"
+  },
+  {
+   "id": "motivated_light",
+   "cn": "动机光变化",
+   "cat": "光",
+   "status": "ok",
+   "min_dur": 1.0,
+   "use": "光的每次变化都来自画面里看得见的光源：闪电、警报灯、手电、车灯",
+   "avoid": "无来源的光突然变亮变暗",
+   "en": "{SOURCE} flares and washes {WHO} in {COLOR} light for a moment.",
+   "example": "E25 Seg8 闪电照亮 Nia 的侧脸"
+  },
+  {
+   "id": "slow_motion_beat",
+   "cn": "慢动作瞬间",
+   "cat": "时间",
+   "status": "trial",
+   "min_dur": 1.4,
+   "use": "单一冲击瞬间：钢闸砸下、脚踩进积水、硬盘落水；不超过 2 秒",
+   "avoid": "任何带台词的镜头（口型和时长全乱）；一段超过一次",
+   "en": "in slow motion, {IMPACT_ACTION}, {PARTICLES} hanging in the air.",
+   "example": "E29 Seg6 钢闸砸落水花四溅"
+  },
+  {
+   "id": "match_on_action",
+   "cn": "动作匹配切",
+   "cat": "段内剪辑",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "一个动作切成两个机位（推门 → 门另一侧，抬手 → 手的特写），切镜看不出跳",
+   "avoid": "两个镜头里动作方向相反",
+   "en": "the camera cuts to {NEW_ANGLE} as the same {ACTION} continues in one unbroken motion.",
+   "example": "E21 Seg6 Nia 拉门 → 门内视角门被拉开"
+  },
+  {
+   "id": "match_cut",
+   "cn": "匹配剪辑（换场）",
+   "cat": "段间转场",
+   "status": "trial",
+   "min_dur": 0,
+   "use": "HARD_CUT 换场：上一段最后一个镜头和下一段第一个镜头共享形状、颜色或画面位置（红色警报灯 → 红色激光；钢闸落下 → 铁门合上）",
+   "avoid": "两边位置对不上就宁可普通硬切",
+   "en": "前段最后镜头写：{SHAPE} centered at {POSITION} of the frame；后段首秒全景同样写 {SIMILAR_SHAPE} at {POSITION} of the frame。两边都用同一个画面位置词。",
+   "example": "E29 Seg8 → E30 Seg1：旋转红灯在画面中上 → 锅炉房红光"
+  },
+  {
+   "id": "smash_cut",
+   "cn": "猛切",
+   "cat": "段间转场",
+   "status": "post",
+   "min_dur": 0,
+   "use": "最吵 → 突然安静，或安静 → 突然爆响；切在声音最高点",
+   "avoid": "接力段（TAIL_RELAY 需要画面承接）",
+   "en": "提示词不写转场；在 plan_src 的 transition 里写 smash_cut，拼接时这一缝不做音频交叉淡化（后期待实现）。",
+   "example": "E28 警报尖啸 → E28 宿舍死寂"
+  },
+  {
+   "id": "sound_bridge",
+   "cn": "声音桥",
+   "cat": "段间转场",
+   "status": "post",
+   "min_dur": 0,
+   "use": "下一场的声音（警笛、雨声、广播）提前压在上一场最后 0.5–1 秒画面上，带观众过去",
+   "avoid": "上一段最后还有台词",
+   "en": "提示词不写；transition 里写 sound_bridge，拼接时按 J-cut 处理环境声（后期待实现）。",
+   "example": "E21 Seg7 → Seg8 广播电流声提前进入"
+  },
+  {
+   "id": "whip_pan_post",
+   "cn": "甩镜转场（后期）",
+   "cat": "段间转场",
+   "status": "post",
+   "min_dur": 0,
+   "use": "时间或地点的快速跳转，节奏型转场；全剧少用",
+   "avoid": "让 H3 生成甩镜（模糊画面会被切点检测当成多余切镜，2 秒镜头里也放不下）",
+   "en": "提示词不写；transition 里写 whip_pan，后期用定向模糊合成（后期待实现）。",
+   "example": "—"
+  },
+  {
+   "id": "hook_open",
+   "cn": "开场钩子镜头",
+   "cat": "短剧",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "每集 Seg1 前 2 秒：先给最强的一个画面（极特写的眼睛/伤口/红光/砸下的钢闸），再接首秒定位全景；观众 2 秒内决定划不划走",
+   "avoid": "开场就是平淡的全景；接力段（Seg1 以外不需要）",
+   "en": "[Shot 1] an extreme close-up of {IMPACT_DETAIL}, {MOTION_IN_FRAME}. [Shot 2] the camera cuts to a wide static shot that fixes {PLACE} ...",
+   "example": "E29 Seg1：先给 Cade 眼睛里映着四道手电光的极特写，再接公路全景"
+  },
+  {
+   "id": "ecu_impact",
+   "cn": "极特写冲击",
+   "cat": "短剧",
+   "status": "ok",
+   "min_dur": 0.8,
+   "use": "情绪最高点的眼睛、咬紧的牙、攥紧的拳、滴落的雨水；竖屏里极特写占满画面冲击最大；1 秒左右",
+   "avoid": "连续两个以上；台词镜头（嘴部极特写口型容易崩）",
+   "en": "the camera cuts to an extreme close-up of {WHO}'s {DETAIL}, {MICRO_ACTION}.",
+   "example": "E30 Cade 的眼睛冷成冰"
+  },
+  {
+   "id": "vertical_depth",
+   "cn": "竖屏纵深",
+   "cat": "短剧",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "竖屏优势是上下：前景在画面下部（手、道具、栅栏），主体在中部，威胁在上部或远处；一个画面讲清三层关系",
+   "avoid": "三层都放人（人数容易乱）",
+   "en": "{FOREGROUND} fills the lower third of the frame sharp, {WHO} stands in the middle of the frame, and {THREAT} looms far behind in the upper frame.",
+   "example": "E28 前景是 Cade 攥着 U 盘的手，中间是他的脸，远处门口站着安保"
+  },
+  {
+   "id": "low_full_body",
+   "cn": "低机位全身",
+   "cat": "短剧",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "竖屏最适合拍全身：低机位从地面往上，人物显得高大；登场、下决心、转身离开",
+   "avoid": "人物在画面里太小（脸看不清时衣服会被画错）",
+   "en": "a low-angle full-body shot from near the ground looks up at {WHO} standing {STATE}, {WHO} filling the height of the frame.",
+   "example": "E30 结尾 Cade 站在校门外，低机位仰拍全身"
+  },
+  {
+   "id": "reaction_cutaway",
+   "cn": "反应插镜",
+   "cat": "短剧",
+   "status": "ok",
+   "min_dur": 1.0,
+   "use": "别人说出狠话后立刻给听者 1 秒反应；动作戏中间插追兵/对手/旁观者的脸，节奏不断、信息不丢；写法按 CINEMATOGRAPHY §9.1（drama-skills H3 实测：情绪词 + 两处泄露最好）",
+   "avoid": "反应镜头里的人张嘴（会被当成说话）",
+   "en": "the camera cuts to a close-up of {WHO}, lips at rest, instantly {EMOTION_WORD}: {LEAK_1} and {LEAK_2}; within a second and a half the look settles and holds.",
+   "example": "E21 Seg6 Cade 听完 Reeve 的话点头"
+  },
+  {
+   "id": "banned",
+   "cn": "本剧不用",
+   "cat": "禁用",
+   "status": "ban",
+   "min_dur": 0,
+   "use": "推拉变焦 dolly zoom / vertigo、子弹时间、360 度环绕、FPV / 无人机视角、甩镜（H3 内）、急推 crash zoom、叠化 / 淡入淡出 / 划像（H3 内）、Shake Strongly、双重曝光、故障风",
+   "avoid": "H3 做不稳，或会触发切点检测误判，或不符合本剧写实调性（2026-10-17：荷兰角/翻滚移出禁用，改为 trial dutch_angle，一集最多一次）",
+   "en": "—",
+   "example": "—"
+  },
+  {
+   "id": "threshold_cut",
+   "cn": "门槛转场",
+   "cat": "转场",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "换场景时把接缝放在门口/洞口：同一画面里门内暖色、门外冷色（或相反），让两段的调色跳变变成有意设计，也包容小幅几何误差",
+   "avoid": "门两侧的两个场景都要在 cast/scene 里定义；不要写淡入淡出/叠化（本剧禁用）",
+   "en": "The shot ends as {WHO} steps through the doorway; the room behind {HIM} is lit in warm amber, the corridor ahead in cold blue. Hard cut to the next scene.",
+   "example": "E31 车内→温室、E34→E35 换场（待试）",
+   "source": "Higgsfield HELL GRIND Brief（门槛转场）"
+  },
+  {
+   "id": "state_start",
+   "cn": "从中段开始",
+   "cat": "提示词写法",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "撞门、冲线、出拳、下车这类过程动作：镜头一开始就已经处于动作中段，过程另拍一镜，避免“走到门边然后僵住”",
+   "avoid": "同一镜里写 reaches→pulls out→winds up→throws 这类连续过程（shot_lint 会提示）",
+   "en": "The shot opens with {WHO} already mid-{ACTION}, {BODY_POSITION}; {RESULT_ALREADY_STARTING}.",
+   "example": "E35 下车：先拍停稳，再拍已跨腿落地的状态",
+   "source": "ACTING 系统 §10 + h3-storyboard-skill（H3 擅长状态，不擅长过程）"
+  },
+  {
+   "id": "sweep_then_result",
+   "cn": "扫过再切结果",
+   "cat": "提示词写法",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "碰撞、液体、撞击这类 H3 画不出接触因果的事件：拍物体扫过画面，下一镜直接给已发生的结果",
+   "avoid": "在同一镜里写 smashes into / splashes over / pours onto（接触瞬间和体积会失控）",
+   "en": "{OBJECT} sweeps across the frame at speed. The camera cuts to {AFTERMATH_ALREADY_HAPPENED}.",
+   "example": "E32 摩托撞门（扫过→切→门已被撞开、木屑落下）",
+   "source": "h3-storyboard-skill（碰撞与液体体积做不到）"
+  },
+  {
+   "id": "eyes_lead",
+   "cn": "眼先于头",
+   "cat": "表演",
+   "status": "trial",
+   "min_dur": 1.5,
+   "use": "特写和反应镜：眼睛先到目标，头后转，让人读到“想法在话之前”；要求有一个明确视线目标",
+   "avoid": "写“瞪大眼睛”之类夸张动作；一镜里同时要求转头+眨眼+表情变化",
+   "en": "{WHO}'s eyes reach {TARGET} a beat before {HIS} head turns, then hold steady.",
+   "example": "",
+   "source": "ACTING 系统 §7（眼睛生命）"
+  },
+  {
+   "id": "staged_blink",
+   "cn": "分阶段眨眼",
+   "cat": "表演",
+   "status": "trial",
+   "min_dur": 2.0,
+   "use": "低成本的“活脸”信号：用一次慢眨→一次快速双眨→一次用力重置眨的顺序表现状态变化",
+   "avoid": "每镜都用；一镜里眨眼次数超过三次",
+   "en": "{WHO} gives one slow blink, then a quick double blink, then one hard blink that resets {HIS} face.",
+   "example": "",
+   "source": "ACTING 系统（分阶段眨眼）"
+  },
+  {
+   "id": "hand_business",
+   "cn": "手上有事",
+   "cat": "表演",
+   "status": "trial",
+   "min_dur": 2.0,
+   "use": "对白镜头让说话者手上在做一件小事（捏手机、转手环、擦手）；最强重音是突然停手（停手=标点）",
+   "avoid": "手上的动作和台词字面意思重复（比如说“大”就张开双手）；动作超过一个",
+   "en": "While {WHO} speaks, {HIS} hands keep working at {SMALL_TASK}; on the last word {HIS} hands stop completely.",
+   "example": "",
+   "source": "ACTING 系统 §4.2（business）"
+  },
+  {
+   "id": "witness_wave",
+   "cn": "目击者错峰反应",
+   "cat": "表演",
+   "status": "trial",
+   "min_dur": 2.0,
+   "use": "群戏和大事件之后：目击者的脸比事件本身更值钱；反应分波次，不同步（A 先、B 慢半拍、C 不动）",
+   "avoid": "所有人同时同一种反应；人数不写（用“约二十人”之类的档位）",
+   "en": "In the crowd, {A} reacts first, {B} a half-beat later, and {C} does not move.",
+   "example": "E39 冲线后观众席",
+   "source": "ACTING 系统 §11"
+  },
+  {
+   "id": "scene_recut",
+   "cn": "同场景换景别开新段",
+   "cat": "段缝",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "E41 起默认段缝：同一场景跨段时硬切，新段第一个镜头换景别（远景↔近景↔过肩↔插入），观众看到的是普通剪辑，没有接力重复和首帧僵硬",
+   "avoid": "新段开场和上一段结尾同景别（shot_lint ⚠）；跨缝人物换位——用站位卡和人数句兜底",
+   "en": "(segment opens) The camera cuts to {NEW_SIZE} of {WHO} {ACTION}, {POSITION_FROM_BLOCKING}.",
+   "example": "BREAK 停车场戏 66 秒跨 4–5 段：高位远景→车内中近景→过肩→特写→双人中景→插入→回远景",
+   "source": "成片《BREAK》（已验证的成片手法）"
+  },
+  {
+   "id": "relay_on_breath",
+   "cn": "接力缝落在静止的一拍",
+   "cat": "段缝",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "只有连续动作不能断时才尾帧接力；接缝放在换气、视线转开、一记重音之后，上一段最后一镜是停住的状态",
+   "avoid": "接缝落在台词、运镜中途、奔跑/挥拳/摔倒中段（shot_lint ⚠）",
+   "en": "The segment ends on a held beat: {WHO} pauses, takes a breath and looks {DIRECTION}.",
+   "example": "",
+   "source": "God-minmax-H3 stitching.md"
+  },
+  {
+   "id": "place_punctuation",
+   "cn": "地点标点远景",
+   "cat": "转场",
+   "status": "trial",
+   "min_dur": 1.6,
+   "use": "换场景时新段前三镜里给一个 1.5–3 秒的远景/高位/航拍定位，告诉观众到了哪里；整集同一地点反复用同一个角度更好认",
+   "avoid": "远景里放主角脸部特写需要的细节（远景认不清脸，靠位置和服装认人）",
+   "en": "The camera cuts to a high wide static shot of {PLACE} in {LIGHT}, {WHO} small at {POSITION}.",
+   "example": "BREAK 58–63 秒主楼远景、96 秒网球场航拍、155 秒停车场高位远景",
+   "source": "成片《BREAK》（已验证的成片手法）"
+  },
+  {
+   "id": "foreground_wipe",
+   "cn": "前景擦除转场",
+   "cat": "转场",
+   "status": "trial",
+   "min_dur": 1.0,
+   "use": "近处物体（毛巾、树叶、柱子、头发、门板）从镜头前划过、遮住画面的一刻切到下一镜；同场景换景别或换场景都能用",
+   "avoid": "划过的物体要在 cast/props/scene 里写明；不要写淡入淡出（本剧禁用）",
+   "en": "{OBJECT} sweeps across the lens and fills the frame for a moment. The camera cuts to {NEXT}.",
+   "example": "BREAK 30 秒毛巾擦脸、17 秒树叶、74 秒柱子",
+   "source": "成片《BREAK》（已验证的成片手法）"
+  },
+  {
+   "id": "vo_montage",
+   "cn": "旁白跨镜头蒙太奇",
+   "cat": "剪辑",
+   "status": "post",
+   "min_dur": 1.0,
+   "use": "人物旁白（后期配）串起一组 1–3 秒的短镜头：人物介绍、回忆、交代背景；声音连续，画面可以跳",
+   "avoid": "旁白和画面里的口型冲突（蒙太奇镜头里人物不说话、嘴唇闭着）",
+   "en": "(no on-screen dialogue) {WHO} {ACTION}, lips at rest.",
+   "example": "BREAK 20–32 秒女主自我介绍 6 个短镜头",
+   "source": "成片《BREAK》（已验证的成片手法）"
+  },
+  {
+   "id": "push_foreground",
+   "cn": "推镜加前景",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 2.4,
+   "use": "推镜/跟拍要读成“摄影机在移动”，画面边缘要有近处物体（柱子、树干、门框、栏杆）从旁边滑出；没有前景时推镜和变焦看起来一样",
+   "avoid": "写 with large amplitude at fast speed（过冲、画面糊）；small amplitude 实测几乎无效，可省略",
+   "en": "The camera pushes in toward {WHO} past {NEAR_OBJECT} at the frame edge, which slides out of frame.",
+   "example": "",
+   "source": "loopforge minimaxh3-shots-skills（camera-grammar）"
+  },
+  {
+   "id": "dutch_angle",
+   "cn": "荷兰角（试用）",
+   "cat": "运镜",
+   "status": "trial",
+   "min_dur": 2.0,
+   "use": "失衡、被操控、真相崩塌的一刻：镜头绕镜轴转成斜构图并停住；需要画面里有地平线或竖线",
+   "avoid": "一集最多一次（shot_lint ⚠）；不要和别的运镜叠加",
+   "en": "The camera rolls counterclockwise into a canted frame and holds, the horizon tilted behind {WHO}.",
+   "example": "",
+   "source": "loopforge（一次通过）"
+  }
+ ],
+ "emotion_map": [
+  {
+   "beat": "每集开头 2 秒",
+   "camera": "开场钩子：极特写或冲击画面先行，再首秒定位全景"
+  },
+  {
+   "beat": "冷静掌控 / 权力人物说话",
+   "camera": "固定或极慢推；仰拍；对称居中构图"
+  },
+  {
+   "beat": "震惊 / 顿悟",
+   "camera": "固定 + 缓推到眼睛；之后给一个反应特写"
+  },
+  {
+   "beat": "对峙 / 谈判",
+   "camera": "先过肩交代两人位置，再近景正反打；最高点可用一次小幅环绕"
+  },
+  {
+   "beat": "崩溃 / 弱势",
+   "camera": "俯拍中景；前景框住（钢网、栅门）；拉出揭示孤立"
+  },
+  {
+   "beat": "追逐 / 逃跑",
+   "camera": "侧面跟拍 + 手持轻晃；插一个脚步/水花特写和一个追兵反应镜头"
+  },
+  {
+   "beat": "潜入未知空间",
+   "camera": "背后跟拍；主观镜头看前方"
+  },
+  {
+   "beat": "发现证据 / 道具",
+   "camera": "转焦（道具 → 人脸），或主观镜头 + 反应特写"
+  },
+  {
+   "beat": "集尾悬念",
+   "camera": "缓推到眼睛或逆光剪影，最后停住"
+  }
+ ]
+}

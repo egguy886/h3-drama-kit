@@ -1,0 +1,145 @@
+{
+ "_about": "分场景连续环境声底（2026-10-17，学自 Higgsfield HELL GRIND：同一条持续环境底声能把不同生成镜头粘成同一空间）。assemble_episode.py 在 E31 起按场景（同一地点参考图的连续段）铺一条底声，叠在 H3 原声下面，段间不断。db 是该层 RMS 大致电平（dBFS），H3 原片均值约 -14～-21 dB，底声放在 -32～-48 dB，只填补静默缺口，不盖人声。layer：noise=噪声颜色（pink/brown/white/blue），hp/lp=高低通 Hz，db，trem=[频率Hz, 深度 0–1] 缓慢起伏，sine=正弦频率 Hz。",
+ "recipes": {
+  "greenhouse": {
+   "cn": "雨打玻璃穹顶 + 蒸汽嘶声 + 低沉水管共鸣",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 350,
+     "lp": 7500,
+     "db": -32,
+     "trem": [
+      0.23,
+      0.25
+     ]
+    },
+    {
+     "noise": "white",
+     "hp": 5500,
+     "lp": 12000,
+     "db": -48,
+     "trem": [
+      0.11,
+      0.4
+     ]
+    },
+    {
+     "noise": "brown",
+     "hp": 40,
+     "lp": 160,
+     "db": -38
+    }
+   ]
+  },
+  "rain_awning": {
+   "cn": "雨棚下的雨声与风",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 450,
+     "lp": 6500,
+     "db": -32,
+     "trem": [
+      0.19,
+      0.3
+     ]
+    },
+    {
+     "noise": "brown",
+     "hp": 40,
+     "lp": 220,
+     "db": -40,
+     "trem": [
+      0.1,
+      0.5
+     ]
+    }
+   ]
+  },
+  "server_room": {
+   "cn": "机房风扇与设备嗡声",
+   "layers": [
+    {
+     "noise": "brown",
+     "hp": 30,
+     "lp": 320,
+     "db": -34
+    },
+    {
+     "sine": 120,
+     "db": -48
+    },
+    {
+     "noise": "white",
+     "hp": 3000,
+     "lp": 9000,
+     "db": -50
+    }
+   ]
+  },
+  "car_cabin": {
+   "cn": "车内路噪与雨刮外的雨",
+   "layers": [
+    {
+     "noise": "brown",
+     "hp": 30,
+     "lp": 220,
+     "db": -33
+    },
+    {
+     "noise": "pink",
+     "hp": 900,
+     "lp": 4500,
+     "db": -42,
+     "trem": [
+      0.3,
+      0.2
+     ]
+    }
+   ]
+  },
+  "night_yard": {
+   "cn": "夜晚堆场：远处人群、金属与风",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 200,
+     "lp": 3200,
+     "db": -36,
+     "trem": [
+      0.13,
+      0.35
+     ]
+    },
+    {
+     "noise": "brown",
+     "hp": 30,
+     "lp": 130,
+     "db": -36
+    }
+   ]
+  },
+  "room_tone": {
+   "cn": "室内底噪",
+   "layers": [
+    {
+     "noise": "brown",
+     "hp": 25,
+     "lp": 160,
+     "db": -42
+    },
+    {
+     "noise": "pink",
+     "hp": 600,
+     "lp": 3000,
+     "db": -52
+    }
+   ]
+  }
+ },
+ "scenes": {
+  "N-ROOFTOP": "night_yard",
+  "N-OFFICE": "room_tone"
+ }
+}

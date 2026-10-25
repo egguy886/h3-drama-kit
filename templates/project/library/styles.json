@@ -1,0 +1,14 @@
+{
+ "night_neon": {
+  "en": "The target video is live-action, cinematic vertical short drama (9:16) with a cold teal-and-red night grade. The only key light is the red neon sign from the far corner, cold blue city glow fills the shadows; steady rain falls, the concrete is wet and mirror-like; deep blacks, soft highlights.",
+  "cn": "唯一主光是远角的红色霓虹，城市冷蓝光补暗部；稳定的雨，水泥地湿亮如镜；深黑、柔和高光。"
+ },
+ "day_overcast": {
+  "en": "The target video is live-action, cinematic vertical short drama (9:16) with a soft desaturated grade. The only light is flat overcast daylight from frame-left; the air is dry and still, the ground is dry; gentle contrast.",
+  "cn": "唯一光源是画左的阴天散射光；空气干燥静止，地面干燥；反差柔和。"
+ },
+ "interior_warm": {
+  "en": "The target video is live-action, cinematic vertical short drama (9:16) with a warm amber grade. The only light is one warm desk lamp at frame-right, the rest of the room falls into soft shadow; dust motes drift in the lamp beam.",
+  "cn": "唯一光源是画右一盏暖色台灯，房间其余部分落在柔和阴影里；灯光里浮着微尘。"
+ }
+}

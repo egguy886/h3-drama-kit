@@ -1,0 +1,16 @@
+{
+ "_说明": "项目级设置。工具都从这里读：剧名、画幅、类型描述（只进中文总述）、素材目录、出片规格。",
+ "series_title_en": "Night Shift",
+ "series_title_cn": "示例剧",
+ "aspect": "9:16",
+ "genre_cn": "写实电影感出海都市悬疑短剧，英文对白",
+ "segment_sec": 15,
+ "segments_per_episode": 8,
+ "asset_root": "assets",
+ "voice_dir": "assets/voices",
+ "voxcpm_model": "models/VoxCPM2",
+ "resolution_test": "480p竖",
+ "resolution_final": "768p竖",
+ "night_window": "00:00-08:00",
+ "autodl_workflow": "minimax_h3_zm_u24"
+}

@@ -1,0 +1,13 @@
+.env
+*.env
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
+*.mp4
+*.wav
+*.png
+*.jpg
+.venv/
+seed-vc/
+models/

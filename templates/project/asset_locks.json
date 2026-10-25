@@ -1,0 +1,19 @@
+{
+ "_说明": "参考图与文字一致性锁：参考图上画了什么，文字就写什么。build_episode.py 在引用该资产的每一段里检查：forbid_* 出现即报错，require_en 缺失即报错。冲突时二选一：改文字跟参考图走，或补一张新的状态参考图并更新这里。",
+ "locks": {
+  "C01": {
+   "why": "C01 参考图是黑色机车夹克 + 灰色连帽衫（示例）",
+   "forbid_en": [
+    "trench coat",
+    "dress"
+   ],
+   "forbid_cn": [
+    "风衣",
+    "裙子"
+   ],
+   "require_en": [
+    "black leather moto jacket"
+   ]
+  }
+ }
+}

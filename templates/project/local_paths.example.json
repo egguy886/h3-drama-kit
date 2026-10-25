@@ -1,0 +1,9 @@
+{
+ "_说明": "复制为 local_paths.json。只在素材不按 <ID>.png 命名放在 assets/ 下时才需要：images / voices 写绝对路径或相对项目根的路径。",
+ "images": {
+  "C01": "assets/images/角色/Mia_三栏_v2.png"
+ },
+ "voices": {
+  "VOICE-MIA-v1": "assets/voices/Mia_h3_32k.wav"
+ }
+}

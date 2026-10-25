@@ -1,0 +1,8 @@
+{
+ "enc": "data_uri",
+ "audio_ok": true,
+ "base_url": "https://www.autodl.art",
+ "auth_header": "Authorization",
+ "auth_prefix": "Bearer ",
+ "probed_at": "2026-10-10（《越线》实测；新账号可再跑一次 probe）"
+}

@@ -1,0 +1,46 @@
+{
+ "_说明": "角色标准描述（全剧复用）。ID 规则：主角 C01…；同一人换装/换状态另起 ID（C01-RAIN、C01-SUIT），每个 ID 一张参考图 assets/images/<ID>.png。base_en/base_cn 里的 {P} 换成本段的 <Picture N>。wear 只写参考图上看得见的样子（参考图与文字冲突时模型听参考图）。voice_id 有声音资产的角色才写；次要角色写 voice_en 并在 voices.json 的 prompt_voices 里登记控制词。noref:true = 还没有图，只按文字（出片前尽量补）。aliases：剧本里的别称（shot_lint/axis_lint 认人用）。",
+ "C01": {
+  "name": "Mia",
+  "name_cn": "Mia（女主，黑色机车夹克）",
+  "kind": "character",
+  "base_en": "the 24-year-old woman shown in {P}; her face, shoulder-length black hair and slim athletic build match {P} exactly; her skin is clean, smooth and evenly toned",
+  "base_cn": "24 岁，脸、齐肩黑发与修长运动体型严格以 {P} 为准；皮肤干净平滑",
+  "wear_en": "she wears a black leather moto jacket over a grey hoodie, dark jeans and black boots",
+  "wear_cn": "黑色机车皮夹克内搭灰色连帽衫、深色牛仔裤、黑靴",
+  "keep": "fully_preserved - face, black hair, black leather jacket and grey hoodie",
+  "voice_id": "VOICE-MIA-v1",
+  "voice_en": "a low, controlled young female voice, dry and precise",
+  "voice_cn": "压低、克制的年轻女声，干脆精确",
+  "aliases": []
+ },
+ "C02": {
+  "name": "Leo",
+  "name_cn": "Leo（男主，深蓝工装外套）",
+  "kind": "character",
+  "base_en": "the 26-year-old man shown in {P}; his face, short curly brown hair and broad build match {P} exactly",
+  "base_cn": "26 岁，脸、短卷棕发与宽肩体型严格以 {P} 为准",
+  "wear_en": "he wears a navy work jacket over a white T-shirt, grey cargo trousers and brown boots",
+  "wear_cn": "深蓝工装外套内搭白 T 恤、灰色工装裤、棕色靴子",
+  "keep": "fully_preserved - face, curly brown hair and navy work jacket",
+  "voice_id": "VOICE-LEO-v1",
+  "voice_en": "a warm, slightly husky male baritone, easy and unhurried",
+  "voice_cn": "温暖略带沙哑的男中音，从容",
+  "aliases": []
+ },
+ "C03": {
+  "name": "Guard",
+  "name_cn": "保安（次要角色，暂无图）",
+  "kind": "character",
+  "noref": true,
+  "base_en": "a heavyset security guard in his fifties with a grey moustache",
+  "base_cn": "五十多岁、留灰色八字胡的壮实保安",
+  "wear_en": "he wears a dark blue security uniform with a blank silver badge and a black cap",
+  "wear_cn": "深蓝保安制服、空白银色徽章、黑色帽子",
+  "voice_en": "a gruff, tired older male voice",
+  "voice_cn": "粗哑疲惫的中年男声",
+  "aliases": [
+   "the guard"
+  ]
+ }
+}

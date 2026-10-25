@@ -1,0 +1,11 @@
+{
+ "_说明": "设备里的声音（广播、电视、电话、耳麦、录音、画外 O.S.）不交给 H3，全部后期配：台词逐字取自剧本。voice 为声音资产角色名，或 designed_voices 的键（先按描述生成固定基准声再逐句克隆）。fx 为后期设备音色（pa / pa_stadium / terminal / recorder / phone / tv / vo / crowd）。工具：tools/post_voice.py；移台词：plans/move_post.py。",
+ "designed_voices": {
+  "Building PA": {
+   "design": "A neutral synthetic announcement voice, adult, flat intonation, even measured pace, crisp consonants, mechanical, like an automated building PA system",
+   "anchor_text": "Attention. The building will close in ten minutes.",
+   "seed": 7001
+  }
+ },
+ "lines": []
+}

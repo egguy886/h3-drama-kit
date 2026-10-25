@@ -1,0 +1,11 @@
+{
+ "_说明": "道具标准描述。参考图：产品照（中性灰台面、单侧软光）；屏幕/标签留空白，文字后期叠加。完整/受损/带血是不同资产。match：判断道具出现在哪些镜头用的关键词。",
+ "P01": {
+  "name_cn": "Mia 的手机（空白屏）",
+  "en": "the black smartphone shown in {P}: a matte black phone with a blank, softly glowing screen",
+  "cn": "哑光黑手机，屏幕空白微亮",
+  "match": [
+   "phone"
+  ]
+ }
+}

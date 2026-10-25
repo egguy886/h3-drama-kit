@@ -1,0 +1,35 @@
+{
+ "_about": "成片交付标准（工具按集号选用；新项目从第 1 集起统一用同一套，别中途换标准）。safe＝平台界面遮挡区（顶部标签栏、底部账号与文案、右侧按钮列），字幕/铭牌/叠字/关键人脸放在安全框内。",
+ "from_episode": 1,
+ "legacy": {
+  "name": "未用",
+  "sub_y": 0.8,
+  "safe": null,
+  "loudnorm": null,
+  "color_match": null
+ },
+ "standard": {
+  "name": "TikTok 海外 v1",
+  "platform": "tiktok",
+  "sub_y": 0.7,
+  "safe": {
+   "top": 0.08,
+   "bottom": 0.24,
+   "left": 0.05,
+   "right": 0.13
+  },
+  "loudnorm": {
+   "I": -14.0,
+   "TP": -1.0,
+   "LRA": 11
+  },
+  "color_match": {
+   "strength": 0.7,
+   "gain_range": [
+    0.85,
+    1.15
+   ],
+   "offset_max": 0.06
+  }
+ }
+}

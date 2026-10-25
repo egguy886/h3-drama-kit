@@ -1,0 +1,38 @@
+{
+ "_说明": "声线清单。tier=asset：主要角色，有固定参考音频（assets/voices/<voice_id>.wav，单声道 32k 用于 H3；master=48k 母版 + ref_text 母版原话，供后期 post_voice 克隆）。prompt_voices：次要角色的提示词固定声，control_prompt 一字不改地复制进提示词。status 在用户听审通过前一律是候选。",
+ "voices": [
+  {
+   "character": "Mia",
+   "voice_id": "VOICE-MIA-v1",
+   "age_anchor": "24 岁女性",
+   "tier": "asset",
+   "status": "candidate",
+   "master": "VOICE-MIA-v1_master_48k.wav",
+   "ref_text": "I have been on this roof every night for a week."
+  },
+  {
+   "character": "Leo",
+   "voice_id": "VOICE-LEO-v1",
+   "age_anchor": "26 岁男性",
+   "tier": "asset",
+   "status": "candidate",
+   "master": "VOICE-LEO-v1_master_48k.wav",
+   "ref_text": "You always pick the worst places to talk."
+  }
+ ],
+ "prompt_voices": [
+  {
+   "character": "Guard",
+   "control_prompt": "Guard, a man in his fifties: gruff, tired mid-low voice, slow heavy cadence, flat General American accent.",
+   "seed": null,
+   "status": "candidate"
+  }
+ ],
+ "prompt_voice_rules": [
+  "控制词逐条原样复制进提示词，一字不改",
+  "只写在该角色开口的段落",
+  "肯定式（不写 no/not）",
+  "不使用真实演员或名人的名字"
+ ],
+ "promotion_rule": "次要角色满足任一条件即升级为声音资产：① 跨 2 集及以上开口；② 单集 ≥3 句；③ 与主角有对手戏且需多段稳定"
+}
