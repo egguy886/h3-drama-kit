@@ -31,7 +31,7 @@
 | S4 编译自检 | 生成中英对照提示词并自动校验 | `compose_plan.py`、`build_episode.py`、`shot_lint.py`、`axis_lint.py` | ❌ 清零 |
 | S5 出片 | 预检 → dry-run → 先锋段 → 夜间批量 | `h3_run.py`、`h3_batch.py` | **付费前明确同意** |
 | S6 看片返工 | 台词核对、对照图、动作量检测；按层回退修 | `dialogue_check.py`、`episode_sheet.py`、`motion_check.py` | 每段保留由人确认 |
-| S7 后期 | 声线统一、设备声、拼接、环境声底、字幕铭牌、片头尾、响度 | `voice_fix_ep.py`、`assemble_episode.py`、`subtitle_episode.py`、`finish_episode.py` | 成片完整看一遍 |
+| S7 后期 | 声线统一、设备声、拼接、环境声底、字幕铭牌、片头尾、响度、平台黑边修复 | `voice_fix_ep.py`、`assemble_episode.py`、`subtitle_episode.py`、`finish_episode.py`、`tiktok_edge.py` | 成片完整看一遍 |
 
 ## 三分钟上手
 
