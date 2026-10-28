@@ -17,6 +17,12 @@ STATE = []
 
 FULL_SPEED = "All action plays at full real-time speed."
 
+# 声音策略（2026-10-28，用户定；学自 HELL GRIND / ONEIRIC / 越线）：生成时只要安静、均匀的房间底噪和人物自身动作声，
+# 不要音乐、人群、雨、壁炉等环境声——每段自带的环境声各不相同，拼接时会在段缝上跳。环境声底、音效、配乐一律后期统一铺。
+# 分镜里写的 sound 保留为 sound_post（后期音效清单），提示词里统一用 QUIET_SOUND，全集一字不差。
+QUIET_SOUND = ("Only a quiet, even room tone and the soft natural sounds of the characters' own visible movements; "
+               "each spoken line is clean, dry and close.")
+
 
 def sh(dur, sb, en, cn, d=None):
     """一个镜头：dur 秒；sb 中文分镜名；en 英文镜头文字（不写 [Shot N]/At 00:0x，生成器自动加）；cn 中文对照；d 本镜台词 ID（如 "L3"）。
@@ -54,7 +60,7 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     if prop_state: s["prop_state"] = prop_state
     if count: s["count"] = count
     if ff: s["ff_en"], s["ff_cn"] = ff
-    s["summary"] = summary; s["sound"] = sound
+    s["summary"] = summary; s["sound"] = QUIET_SOUND; s["sound_post"] = sound
     s["cn"] = dict(zip(("kind", "dev", "perf", "sound", "visual"), cn))
     s["shots"] = shots
     if mood: s["mood"] = list(mood)

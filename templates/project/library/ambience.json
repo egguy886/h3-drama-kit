@@ -1,5 +1,5 @@
 {
- "_about": "分场景连续环境声底（2026-10-17，学自 Higgsfield HELL GRIND：同一条持续环境底声能把不同生成镜头粘成同一空间）。assemble_episode.py 在 E31 起按场景（同一地点参考图的连续段）铺一条底声，叠在 H3 原声下面，段间不断。db 是该层 RMS 大致电平（dBFS），H3 原片均值约 -14～-21 dB，底声放在 -32～-48 dB，只填补静默缺口，不盖人声。layer：noise=噪声颜色（pink/brown/white/blue），hp/lp=高低通 Hz，db，trem=[频率Hz, 深度 0–1] 缓慢起伏，sine=正弦频率 Hz。",
+ "_about": "分场景连续环境声底（2026-10-17，学自 Higgsfield HELL GRIND：同一条持续环境底声能把不同生成镜头粘成同一空间）。assemble_episode.py 在 E31 起按场景（同一地点参考图的连续段）铺一条底声，叠在 H3 原声下面，段间不断。db 是该层 RMS 大致电平（dBFS），H3 原片均值约 -14～-21 dB，底声放在 -32～-48 dB，只填补静默缺口，不盖人声。layer：noise=噪声颜色（pink/brown/white/blue），hp/lp=高低通 Hz，db，trem=[频率Hz, 深度 0–1] 缓慢起伏，sine=正弦频率 Hz。 2026-10-28：本剧 H3 原声经 tools/dialog_stem.py 只留人声，环境声全部由这里的底声提供（合成占位，后期可换真实环境录音）。",
  "recipes": {
   "greenhouse": {
    "cn": "雨打玻璃穹顶 + 蒸汽嘶声 + 低沉水管共鸣",
@@ -136,10 +136,194 @@
      "db": -52
     }
    ]
+  },
+  "rain_window": {
+   "cn": "雨打窗玻璃 + 旧暖气低鸣",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 400,
+     "lp": 6500,
+     "db": -34,
+     "trem": [
+      0.21,
+      0.25
+     ]
+    },
+    {
+     "noise": "brown",
+     "hp": 40,
+     "lp": 160,
+     "db": -44
+    }
+   ]
+  },
+  "club_hall": {
+   "cn": "高档室内大厅：远处人声嘈杂的低频团 + 房间混响底",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 250,
+     "lp": 2400,
+     "db": -37,
+     "trem": [
+      0.17,
+      0.35
+     ]
+    },
+    {
+     "noise": "brown",
+     "hp": 40,
+     "lp": 150,
+     "db": -44
+    }
+   ]
+  },
+  "tiled_room": {
+   "cn": "瓷砖小空间的空调底噪",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 800,
+     "lp": 5000,
+     "db": -50
+    },
+    {
+     "noise": "brown",
+     "hp": 40,
+     "lp": 140,
+     "db": -45
+    }
+   ]
+  },
+  "garage": {
+   "cn": "地下车库：通风低鸣 + 灯管嗡声",
+   "layers": [
+    {
+     "noise": "brown",
+     "hp": 30,
+     "lp": 200,
+     "db": -36
+    },
+    {
+     "sine": 60,
+     "db": -52
+    },
+    {
+     "noise": "white",
+     "hp": 3000,
+     "lp": 8000,
+     "db": -55
+    }
+   ]
+  },
+  "campus_outdoor": {
+   "cn": "户外校园：风声与远处车流",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 300,
+     "lp": 4000,
+     "db": -38,
+     "trem": [
+      0.13,
+      0.4
+     ]
+    },
+    {
+     "noise": "white",
+     "hp": 4000,
+     "lp": 10000,
+     "db": -53,
+     "trem": [
+      0.09,
+      0.5
+     ]
+    }
+   ]
+  },
+  "lake": {
+   "cn": "湖边：水拍岸与林间风",
+   "layers": [
+    {
+     "noise": "pink",
+     "hp": 200,
+     "lp": 3000,
+     "db": -38,
+     "trem": [
+      0.15,
+      0.45
+     ]
+    },
+    {
+     "noise": "brown",
+     "hp": 40,
+     "lp": 180,
+     "db": -45
+    }
+   ]
+  },
+  "ocean_night": {
+   "cn": "夜晚海浪",
+   "layers": [
+    {
+     "noise": "brown",
+     "hp": 40,
+     "lp": 400,
+     "db": -34,
+     "trem": [
+      0.08,
+      0.6
+     ]
+    },
+    {
+     "noise": "pink",
+     "hp": 500,
+     "lp": 6000,
+     "db": -44,
+     "trem": [
+      0.08,
+      0.5
+     ]
+    }
+   ]
+  },
+  "car_day": {
+   "cn": "行驶车内路噪",
+   "layers": [
+    {
+     "noise": "brown",
+     "hp": 30,
+     "lp": 220,
+     "db": -35
+    }
+   ]
   }
  },
  "scenes": {
-  "N-ROOFTOP": "night_yard",
-  "N-OFFICE": "room_tone"
+  "N-WREN-RENTAL": "rain_window",
+  "N-WREN-18B-BEDROOM-NIGHT": "rain_window",
+  "N-CLUB": "club_hall",
+  "N-CLUB-DINING": "club_hall",
+  "N-CLUB-PRIVATE": "club_hall",
+  "N-GREENHOUSE": "club_hall",
+  "N-HAMPTONS-BALLROOM": "club_hall",
+  "N-CLUB-RESTROOM": "tiled_room",
+  "N-WREN-18B-BATH": "tiled_room",
+  "N-GARAGE": "garage",
+  "N-CAMPUS": "campus_outdoor",
+  "N-CAMPUS-GATE": "campus_outdoor",
+  "N-HUDSON-ESTATE": "lake",
+  "N-HAMPTONS-TERRACE": "ocean_night",
+  "N-CAR-BENTLEY": "car_cabin",
+  "N-CAR-BENTLEY-DAY": "car_day",
+  "N-LUCIEN-18A": "room_tone",
+  "N-WREN-18B": "room_tone",
+  "N-WREN-18B-BEDROOM-DAY": "room_tone",
+  "N-AURELIAN-LOBBY": "room_tone",
+  "N-LUMEN-CONF": "room_tone",
+  "N-LIBRARY": "room_tone",
+  "N-HAMPTONS-SUITE": "room_tone",
+  "N-HAMPTONS-HALLWAY": "room_tone"
  }
 }
