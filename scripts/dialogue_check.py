@@ -4,6 +4,8 @@
 输出：review/台词核对_<范围>.md
 """
 import argparse, difflib, glob, json, os, re, subprocess, sys, tempfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import qc_lib as Q
 
 ap = argparse.ArgumentParser()
 ap.add_argument("episodes", nargs="+"); ap.add_argument("--model", default="small")
@@ -18,25 +20,6 @@ def eps(spec):
         m = re.fullmatch(r"E(\d+)-E?(\d+)", p.upper())
         out += [f"E{i:02d}" for i in range(int(m.group(1)), int(m.group(2)) + 1)] if m else [p.upper()]
     return out
-
-
-def tok(s):
-    s = s.lower().replace("’", "'").replace("—", " ").replace("-", " ")
-    s = re.sub(r"(\d+)\.(\d+)", r"\1 point \2", s)
-    return re.sub(r"[^a-z0-9' ]", " ", s).replace("'", "").split()
-
-
-def best(line, hyp):
-    """在转写词序列里找和该句最像的窗口，返回 (相似度, 命中文本)"""
-    L = tok(line)
-    if not L or not hyp: return 0.0, ""
-    bestr, bt = 0.0, ""
-    for w in range(max(1, len(L) - 3), len(L) + 4):
-        for i in range(0, max(1, len(hyp) - w + 1)):
-            seg = hyp[i:i + w]
-            r = difflib.SequenceMatcher(None, L, seg).ratio()
-            if r > bestr: bestr, bt = r, " ".join(seg)
-    return bestr, bt
 
 
 rows = []; lines_out = []
@@ -55,10 +38,10 @@ for ep in eps(a.episodes):
         txtp = os.path.join(tmp, f"seg{s['id']:02d}_accepted.txt")
         hyp_raw = open(txtp, encoding="utf-8").read().strip() if os.path.isfile(txtp) else ""
         if os.path.isfile(txtp): os.remove(txtp)
-        hyp = tok(hyp_raw)
         for i in ids:
-            r, bt = best(lock[i]["text_en"], hyp)
-            rows.append((ep, s["id"], i, lock[i]["speaker"], r, lock[i]["text_en"], bt, hyp_raw))
+            sc = Q.score_line(lock[i]["text_en"], hyp_raw)
+            r = sc["ratio"] if (sc["head_ok"] and sc["tail_ok"]) else min(sc["ratio"], 0.74)   # 头/尾被吞的一律按 ❌ 处理
+            rows.append((ep, s["id"], i, lock[i]["speaker"], r, lock[i]["text_en"], sc["matched"] + ("" if sc["head_ok"] else "  ⟵开头词丢了") + ("" if sc["tail_ok"] else "  ⟵结尾被吞"), hyp_raw))
         print(ep, "Seg", s["id"], ids, flush=True)
 
 name = "-".join([eps(a.episodes)[0], eps(a.episodes)[-1]])

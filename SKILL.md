@@ -1,6 +1,6 @@
 ---
 name: h3-drama-kit
-description: AI 短剧全流程工具包（MiniMax H3 + AutoDL 云端出片）：剧本审计与台词锁定 → 拆视觉/声线资产并写参考图提示词 → 写分镜与 H3 提示词 → 编译自检 → AutoDL 批量出片 → 看片返工 → 声线统一/拼接/字幕/响度交付。新开一部剧、写某一集分镜或提示词、拆资产、出片、审片、后期时使用。来源：《越线》60 集实战 + RunningHub H3 对照测试。
+description: AI 短剧全流程工具包（MiniMax H3 + AutoDL 云端出片 / 自有 ComfyUI 服务器出片）：剧本审计与台词锁定 → 拆视觉/声线资产并写参考图提示词 → 写分镜与 H3 提示词 → 编译自检 → AutoDL 批量出片 → 看片返工 → 声线统一/拼接/字幕/响度交付。新开一部剧、写某一集分镜或提示词、拆资产、出片、审片、后期时使用。来源：《越线》60 集实战 + RunningHub H3 对照测试。
 ---
 
 # H3 短剧工具包（h3-drama-kit）
@@ -24,6 +24,7 @@ cd <项目目录> && python3 tools/kit_doctor.py
 | 3 分镜 | 写 `plans/e05.py`（`from pw import *`：seg / sh / lock1） | 自查清单 | **playbook/04（核心）** |
 | 4 编译自检 | `python3 plans/e05.py && python3 tools/compose_plan.py E05 && python3 tools/build_episode.py episodes/E05 --voices voices.json`；`python3 tools/axis_lint.py E05` | ❌ 清零，⚠ 逐条看 | playbook/05 |
 | 5 出片 | `h3_run.py check` → `run --dry-run` → `h3_batch.py plan` → **问制片人** → `h3_batch.py run E05-E08 --window 00:00-08:00` | 付费前明确同意 | playbook/06 |
+| 5′ 自有 ComfyUI | `preflight.py E05-E08` → `comfy_run.py batch E05-E08 --tag r1`（每段自动质检、坏段自动换种子重出）（无单次费用，单卡串行）→ `auto_post.py E05-E08`（只留人声 + 铺环境底 + 拼接） | 服务器常开才走这条 | **playbook/11** |
 | 6 看片返工 | `h3_run.py accept/reject`、`dialogue_check.py`、`episode_sheet.py`、`motion_check.py` | 每段保留由人确认 | playbook/07 |
 | 7 后期 | `voice_fix_ep.py` → `post_voice.py` → `assemble_episode.py` → `finish_episode.py` | 成片完整看一遍 | playbook/08 |
 
@@ -35,6 +36,8 @@ cd <项目目录> && python3 tools/kit_doctor.py
 5. 参考图优先于文字：冲突就改文字或补状态图（asset_locks.json 锁住）。
 6. 回到最早出错的一层修（参考图 → 镜头设计 → 提示词 → 单段重出），一次只改一处；同段 10 次不过就拆镜头。
 7. 片子在人看过之前都是"候选"；自动分不管表演、台词、人脸。
+9. **返工原因必须落成机器规则**（写时 lint / 预检 / 出片后自动质检 / 前期资产），不能只靠人看片；画面里要拍清的字一律先做带文字的道具参考图，不靠后期叠字。【量产，playbook/12】
+8. **生成时不要环境声/音乐**：提示词声音行全集统一 `QUIET_SOUND`，环境底、音效、配乐一律后期统一铺（段缝才不跳声）。【量产，playbook/11】
 
 ## 写镜头的十条（详见 playbook/04）
 1. 每段 15.0 秒、≤6 镜；最后一句台词 ≤13.5 秒；最后 1–1.5 秒是有内容的停留。【量产】

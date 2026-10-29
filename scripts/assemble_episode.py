@@ -24,7 +24,10 @@ MAX_IN = 12 / FPS
 
 
 def sh(cmd):
-    return subprocess.run(cmd, capture_output=True, check=True)
+    r = subprocess.run(cmd, capture_output=True)
+    if r.returncode:        # 报错时把 ffmpeg 的 stderr 打出来（否则只看到一长串命令）
+        raise SystemExit(f"命令失败（退出码 {r.returncode}）：{cmd[0]}\n{r.stderr.decode('utf-8', 'replace')[-1500:]}")
+    return r
 
 
 def dur(p):
@@ -230,7 +233,7 @@ if not a.no_bed and profile(a.episode).get("color_match") and AMB["scenes"]:
                 src = f"anoisesrc=color={layer['noise']}:sample_rate=48000:amplitude=0.5:duration={L:.3f}:seed={7 + li}"
                 fl = f"highpass=f={layer['hp']},lowpass=f={layer['lp']}," if layer.get("hp") else ""
             bed_inputs += ["-f", "lavfi", "-i", src]
-            tr = f"tremolo=f={layer['trem'][0]}:d={layer['trem'][1]}," if layer.get("trem") else ""
+            tr = f"tremolo=f={max(0.1, layer['trem'][0])}:d={layer['trem'][1]}," if layer.get("trem") else ""   # ffmpeg tremolo f 下限 0.1
             lab = f"b{li}"; li += 1
             # anoisesrc 满幅 0.5 的 RMS 约 -12 dBFS（pink）/ 更低（brown），统一用 volume 定电平：先用 loudnorm 无意义，这里按经验补偿 -9 dB 后加上 layer.db
             bed_fa.append(f"[{n_in}:a]aformat=sample_rates=48000:channel_layouts=stereo,{fl}{tr}volume={layer['db'] + a.bed_offset_db - layer_rms(layer):.1f}dB[{lab}]")

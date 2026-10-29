@@ -30,8 +30,27 @@ HOLD = re.compile(r"\b(holds?|settles?|stays?|to the end|final second|freezes)\b
 def ts(t):
     m = int(t // 60); s = t - 60 * m
     return f"{m:02d}:{s:06.3f}"
-def r_en(s):  return re.sub(r'\{\{d:(L\d+)\}\}', lambda m: f"<d>[English] {L[m.group(1)]['text_en']}</d>", s)
-def r_cn(s):  return re.sub(r'\{\{q:(L\d+)\}\}', lambda m: f"\"{L[m.group(1)]['text_en']}\"", s)
+
+_SPEECH_V = (r"says?|said|tells|told|asks|asked|demands|demanded|protests|protested|shrieks|snaps|whispers|murmurs|mutters|wails|declares|orders|warns|"
+             r"exclaims|cries out|shouts|yells|answers|replies|insists|explains|admits|confesses|announces|stammers|mumbles|moans|sobs|pleads|begs|reads out|notes")
+_SPEECH_RX = re.compile(rf"\b(?:{_SPEECH_V})\b[^;.]*", re.I)
+
+
+def scrub_speech(t):
+    """总述（summary）里不写台词内容的转述。
+    2026-10-29 实测：总述里 "tells him to release her, the door was unlocked…" 这类转述会被 H3 当台词念出来——
+    E12 Seg7 / E13 Seg5 / E11 Seg7 都是先含糊地复述一遍转述、再说真正的台词（12/90 段被质检抓到"多说了词"）。
+    这里把总述里"说话动词 + 内容"的整段（到下一个分号/句号）换成 speaks，台词只留在镜头里的 {{d:Lx}}。"""
+    return re.sub(r"\s+", " ", _SPEECH_RX.sub("speaks", t)).replace("speaks speaks", "speaks")
+
+def pace(t):
+    """台词里的省略号（...）在提示词里换成逗号：用词一字不改，只改停顿记号。
+    2026-10-29 实测：E04 Seg5 / E06 Seg8 / E09 Seg6 三段的台词在"..."处被模型塞进乱码插词（"Aflac DuVarek tangles her line on us"），
+    重出 2 次都一样；14 句含省略号的台词里 4 句 <0.85，74 句不含的只有 5 句。质检仍按锁定原文（含 "..."）比对。"""
+    t = re.sub(r"\s*(?:\.{3,}|…)\s*$", ".", t.strip())
+    return re.sub(r"\s*(?:\.{3,}|…)\s*", ", ", t).replace(", ?", "?").replace(", !", "!").replace(",,", ",")
+def r_en(s):  return re.sub(r'\{\{d:(L\d+)\}\}', lambda m: f"<d>[English] {pace(L[m.group(1)]['text_en'])}</d>", s)
+def r_cn(s):  return re.sub(r'\{\{q:(L\d+)\}\}', lambda m: f"\"{pace(L[m.group(1)]['text_en'])}\"", s)
 
 SECTIONS = ['subject_definitions', 'summary', 'retention_analysis', 'detailed_description', 'overall_soundscape', 'non_diegetic_music']
 def blk(key, text): return f"<!-- EN:{key} -->\n{text}\n<!-- /EN -->"
@@ -53,7 +72,7 @@ def bilingual(s, e, w, sd, shot_pairs, intro):
         else: slot = f'ref_audio_{ka}'; ka += 1
         md.append(f"| {slot} | {r[0]} | {r[1]} |")
     md += ['', '## 总述', '', cnb(r_cn(w['open'])), '', blk('subject_definitions', '\n'.join(sd)), '',
-           blk('summary', f"{e['tag']} {e['summary']}"), '', blk('retention_analysis', '\n'.join(e['retention'])), '',
+           blk('summary', f"{e['tag']} {scrub_speech(e['summary'])}"), '', blk('retention_analysis', '\n'.join(e['retention'])), '',
            '## 镜头', '', blk('detailed_description', r_en('\n'.join(intro))), '']
     for k, t0, t1, sh, en_line in shot_pairs:
         md += [f"### 镜头 {k} · {t0:.1f}–{t1:.1f}s" + (f"｜对白 {sh['dialogue']}" if sh['dialogue'] else ''), '',
@@ -101,7 +120,7 @@ for s in segs:
         t = round(t + sh['dur'], 3)
     used_en += re.findall(r'\{\{d:(L\d+)\}\}', '\n'.join(body)); used_cn += re.findall(r'\{\{q:(L\d+)\}\}', '\n'.join(wl) + s['wenwu']['open'] + s['wenwu']['perf'])
     sd = ([e['first_frame']] if e['first_frame'] else []) + e['subjects'] + e['audios']
-    en = '\n\n'.join(['subject_definitions:\n' + '\n'.join(sd), f"summary:\n{e['tag']} {e['summary']}",
+    en = '\n\n'.join(['subject_definitions:\n' + '\n'.join(sd), f"summary:\n{e['tag']} {scrub_speech(e['summary'])}",
                       'retention_analysis:\n' + '\n'.join(e['retention']), 'detailed_description:\n' + r_en('\n'.join(body)),
                       'overall_soundscape:\n' + e['soundscape'], 'non_diegetic_music:\nN/A']) + '\n'
     w = s['wenwu']
