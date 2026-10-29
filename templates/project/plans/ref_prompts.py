@@ -15,15 +15,38 @@ NEG = ('Negative constraints: no readable text, no random letters or numbers, no
 def wear(v):
     w = v['wear_en']
     return w.split(' wears ', 1)[1] if ' wears ' in w else w
-def char(cid, v):
+def char_v1(cid, v):
     return (f'{HEAD}\n\nLayout: three panels side by side on a flat neutral mid-grey studio backdrop with soft even light. LEFT: a large three-quarter close-up '
             'portrait of the face and shoulders, eyes with small natural catchlights. MIDDLE: a full-body front view with the head cropped out at the top edge '
             '(frame from the neck down). RIGHT: a full-body back view. Same real person and identical outfit in all three panels; plain and unstyled.\n\n'
             f'Character: {v["look_en"]}. Skin is clean, smooth and evenly toned. Outfit: {wear(v)}. This is an adult.\n\n{NEG}')
-def scene(sid, v):
+
+def char(cid, v):
+    """详尽版（2026-10-29 制片人：参考图尽量详尽）：3×2 六格——脸部正面特写 / 四分之三肖像 / 侧脸肖像；全身正面（切头）/ 全身背面（切头）/ 细节条（手、鞋、面料、配饰）。"""
+    if os.environ.get('REF_STYLE') == 'v1': return char_v1(cid, v)
+    return (f'{HEAD}\n\nLayout: a detailed character turnaround sheet in a 3 columns by 2 rows grid on a flat neutral mid-grey studio backdrop with soft even light. '
+            'TOP ROW, left to right: (1) a large straight-on close-up of the face and neck with relaxed neutral expression and small natural catchlights in the eyes; '
+            '(2) a three-quarter portrait of the face, hair and shoulders; (3) a clean side-profile portrait of the face, hair and shoulders. '
+            'BOTTOM ROW, left to right: (4) a full-body front view with the head cropped out at the top edge (frame from the neck down), arms relaxed; '
+            '(5) a full-body back view with the head cropped out, showing how the hair falls and how the outfit closes at the back; '
+            '(6) a detail panel split into four small insets: both hands and wrists, the shoes, a close view of the main fabric texture and stitching, and any jewellery, watch or accessory. '
+            'Same real person and identical outfit, colours, wear and proportions in every panel; plain and unstyled.\n\n'
+            f'Character: {v["look_en"]}. Skin is clean, smooth and evenly toned. Outfit: {wear(v)}. This is an adult.\n\n{NEG}')
+def scene_v1(sid, v):
     body = v['en'].split(' shown in {P}: ', 1)[1]
     return (f'{HEAD}\n\nLayout: one single image, a high-angle three-quarter wide view of the empty location, camera high in one corner looking diagonally down '
             'at about 45 degrees; one light logic with one consistent shadow direction; no people. Every door is closed, every screen is dark, every curtain is still.\n\n'
+            f'Location: {body}. {v["layout_en"]} Light: {v.get("light_en", "")}.\n\n{NEG}')
+def scene(sid, v):
+    """详尽版（2026-10-29 制片人：参考图尽量详尽）：2×2 四格——主机位高角空镜 / 反向机位高角空镜 / 平视对准主要陈设 / 材质与关键物件特写；同一空间、同一光、同一布局。"""
+    if os.environ.get('REF_STYLE') == 'v1': return scene_v1(sid, v)
+    body = v['en'].split(' shown in {P}: ', 1)[1]
+    return (f'{HEAD}\n\nLayout: a detailed location reference sheet in a 2 by 2 grid of four panels of the same empty location with identical architecture, furniture positions, materials and light in every panel; no people. '
+            'TOP-LEFT: the master view, a high-angle three-quarter wide view with the camera high in one corner looking diagonally down at about 45 degrees. '
+            'TOP-RIGHT: the reverse view, the same room seen from the opposite high corner, so the layout can be understood from both sides. '
+            'BOTTOM-LEFT: an eye-level view straight toward the most important piece of the set. '
+            'BOTTOM-RIGHT: a detail panel split into four small insets of the key materials and objects (floor, wall finish, the main furniture, the main light source). '
+            'One light logic with one consistent shadow direction. Every door is closed, every screen is dark, every curtain is still.\n\n'
             f'Location: {body}. {v["layout_en"]} Light: {v.get("light_en", "")}.\n\n{NEG}')
 def prop(pid, v):
     body = v['en'].split(' shown in {P}: ', 1)[1]
