@@ -2,7 +2,7 @@
 """出片前总预检——把这个项目踩过的坑都变成自动检查（2026-10-29 复盘）。出片 / 开夜班批量前跑一遍：
   python3 tools/preflight.py E15-E20          # 有 ❌ 退出码 1，⚠ 只提示
 检查项（括号里是当时踩的坑）：
-  1. 资源：磁盘剩余 ≥ 每段 0.15 GB × 待出段数；ComfyUI 面板在线、队列空闲（单卡，别两个任务同时跑）
+  1. 资源：磁盘剩余 ≥ 每段 0.04 GB × 待出段数；ComfyUI 面板在线、队列空闲（单卡，别两个任务同时跑）
   2. 参考图：计划里引用的每个 ID（角色/场景/道具）图片都在 assets/ 下；noref=false 的必须有图；assets/ 里不能混进 _rejected（废图会被"取最大文件名"误选）
   3. 资料库字段：cast 要有 look_en/voice_cn/wear_en，scene 要有 layout_cn，prop 要有 en/cn；这些英文里不能有否定词（compose 会 KeyError / build 会 ❌）
   4. 画面里的可读文字：分镜近景提到屏幕/便签/合同/书/牌面且没挂"带文字的道具参考图"（props.json 的 image_text）→ ⚠（不靠后期叠字）
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         d = os.path.join(PIPE, "episodes", ep, "05_prompts")
         nseg += len([f for f in os.listdir(d) if f.endswith(".meta.json")]) if os.path.isdir(d) else 0
     free = shutil.disk_usage(PIPE).free / 1e9
-    need = nseg * 0.15
+    need = nseg * 0.04          # 实测每段约 25–30 MB（成片 + 人声副本 + 拼接分摊），留余量
     (E if free < need else (W if free < need * 1.5 else print))(f"磁盘剩余 {free:.1f} GB，{nseg} 段约需 {need:.1f} GB") if free < need * 1.5 else print(f"✅ 磁盘剩余 {free:.1f} GB，{nseg} 段约需 {need:.1f} GB")
     if not a.no_net:
         try:
