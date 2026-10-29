@@ -24,6 +24,20 @@ def neg_check(sid, summary, shots, cn, mood=None):
         if m: print(f"  ⚠ Seg{sid} {where} 含否定表达 {m}（'能不能' 里藏着 '不能'，改成 '是否'）")
 
 
+# ---- 画面缺陷写作规则（2026-10-29 E15–E18 看片：脸红成皮炎 / 朱砂痣变两颗红点 / 空镜头切走）----
+SKIN_BAD = re.compile(r"\b(?:her|his|Wren's|Lucien's)?\s*(?:cheeks?|face|neck|skin)\b[^.,;]{0,18}\b(?:flush\w*|burn\w*|flam\w*|crimson|red|pink|blush\w*)\b|\b(?:flushed|blushing|rosy)\b[^.,;]{0,12}\b(?:cheeks?|face)\b|\bblush\w*\b", re.I)
+PEOPLE = re.compile(r"\{C\d|Wren|Lucien|Sloane|Beckett|Tyler|Graham|Owen|Evelyn|Diane|Grandma|Hastings|hand|finger|figure|silhouette|man\b|woman|girl|boy|guest|crowd|people|reporter|student", re.I)
+
+
+def look_check(sid, shots, summary=""):
+    """脸红别写（模型会画成皮炎）；朱砂痣只能写"一颗米粒大"；没有人的镜头会被渲染成空场景。只提示，不拦。"""
+    for k, x in enumerate(shots, 1):
+        t = re.sub(r"\{\{d:[^}]*\}\}|\{SAY:[^}]*\}", "", x["en"])
+        if SKIN_BAD.search(t): print(f"  ⚠ Seg{sid} 镜{k} 脸/颈/皮肤写了发红（{SKIN_BAD.search(t).group(0).strip()}）：模型会画成皮炎红斑，情绪靠眼神和表情写")
+        if re.search(r"\bmole\b", t, re.I) and "rice" not in t.lower(): print(f"  ⚠ Seg{sid} 镜{k} 朱砂痣没写成 one single rice-grain-sized：模型会画成两三颗大红点")
+        if k > 1 and not PEOPLE.search(t) and re.match(r"the camera (?:opens on|cuts to) an? (?:wide|medium|close-up|high-angle|low-angle|still wide)", t, re.I): print(f"  ⚠ Seg{sid} 镜{k} 镜头里没有人/手：容易被渲染成空场景，接缝处会突兀；改成带人的特写")
+
+
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))      # 项目根（plans/ 的上一级）
 
 # 状态锁：剧情里某个资产状态变了（手环被剪、换装、受伤），之后的段只能用新参考，并禁止旧描述出现。
@@ -78,6 +92,7 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     s["summary"] = summary; s["sound"] = QUIET_SOUND; s["sound_post"] = sound
     s["cn"] = dict(zip(("kind", "dev", "perf", "sound", "visual"), cn))
     neg_check(id, summary, shots, cn, mood)
+    look_check(id, shots)
     s["shots"] = shots
     if mood: s["mood"] = list(mood)
     if blocking: s["blocking"] = list(blocking)
