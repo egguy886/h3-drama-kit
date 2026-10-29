@@ -133,6 +133,22 @@ def seg_lines(ep, seg):
     return []
 
 
+def _has_device_voice(ep, seg):
+    """该段是否有"设备里的声音"（电话/外放/隔门喊话，台词已移到后期 post_audio）：这类段 H3 会自己说出一点对方的话，不算插词。"""
+    d = os.path.join(PIPE, "episodes", ep)
+    try:
+        moved = json.load(open(os.path.join(d, "02_dialogue_lock.json"), encoding="utf-8")).get("post_audio_moved")
+        if not moved: return False
+        plan = json.load(open(os.path.join(d, "plan.json"), encoding="utf-8"))
+        for sg in plan["segments"]:
+            if sg["id"] == seg:
+                txt = " ".join(sh["en"] for sh in sg["shots"]) + " " + sg.get("summary", "")
+                return bool(re.search(r"\b(speaker|phone|call|voice|through the door)\b", txt, re.I))
+    except Exception:
+        return False
+    return False
+
+
 def qc_segment(ep, seg, clip, model="small"):
     """单段质检。返回 dict(status, score, issues, lines, tech)。"""
     tech = probe(clip)
@@ -157,7 +173,7 @@ def qc_segment(ep, seg, clip, model="small"):
             elif sc["ratio"] < 0.88 and status == "PASS":
                 issues.append(f"{lid}（{sp}）个别词有差（{sc['ratio']:.2f}）"); status = "WARN"
     # 插词：转写词数明显多于该段台词总词数 → 模型在台词里塞了没写的话（E04/E06/E09 的"..."处）
-    if lines and tech["audio"]:
+    if lines and tech["audio"] and not _has_device_voice(ep, seg):
         total = sum(len(tok(t)) for _, _, t in lines)
         got = len(tok(hyp))
         if got > total * 1.15 + 2:

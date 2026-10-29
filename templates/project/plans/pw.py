@@ -14,9 +14,9 @@ NEG_EN = re.compile(r"\b(not|no|never|without|nothing|none|cannot)\b|n't", re.I)
 NEG_CN = ["不要", "禁止", "不得", "不能", "没有", "不会", "不出现", "避免"]
 
 
-def neg_check(sid, summary, shots, cn):
+def neg_check(sid, summary, shots, cn, mood=None):
     def clean(t): return re.sub(r"\{\{d:[^}]*\}\}|\{SAY:[^}]*\}", "", t)
-    for where, t in [(f"镜{k}", x["en"]) for k, x in enumerate(shots, 1)]:
+    for where, t in ([("mood", mood[0])] if mood else []) + [(f"镜{k}", x["en"]) for k, x in enumerate(shots, 1)]:
         m = NEG_EN.findall(clean(t))
         if m: print(f"  ⚠ Seg{sid} {where} 英文含否定词 {m}（改肯定式，例：'stays closed' 而不是 'does not open'）")
     for where, t in [("中文说明", " ".join(cn))] + [(f"镜{k}", x["cn"]) for k, x in enumerate(shots, 1)]:
@@ -77,7 +77,7 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     if ff: s["ff_en"], s["ff_cn"] = ff
     s["summary"] = summary; s["sound"] = QUIET_SOUND; s["sound_post"] = sound
     s["cn"] = dict(zip(("kind", "dev", "perf", "sound", "visual"), cn))
-    neg_check(id, summary, shots, cn)
+    neg_check(id, summary, shots, cn, mood)
     s["shots"] = shots
     if mood: s["mood"] = list(mood)
     if blocking: s["blocking"] = list(blocking)
