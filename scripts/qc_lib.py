@@ -39,7 +39,7 @@ def _num(n):
 def tok(s):
     """文本 → 词序列：小写、去标点、数字转英文词、连字符拆开、数字间的 and 去掉。"""
     s = s.lower().replace("’", "'").replace("—", " ").replace("-", " ").replace("$", " ")
-    s = re.sub(r"(\d),(\d{3})", r"\1\2", s)
+    s = re.sub(r"(\d) ?,(\d{3})", r"\1\2", s)
     s = re.sub(r"(?<=\d) (?=\d{3}\b)", "", s)            # "5 000" → 5000
     s = re.sub(r"(\d+)\.(\d+)", r"\1 point \2", s)
     s = re.sub(r"(\d+)%", r"\1 percent", s)
@@ -104,10 +104,21 @@ def probe(clip):
         return {"dur": 0.0, "audio": False, "size": None}
 
 
-def transcribe(clip, model="small"):
+def transcribe(clip, model="small", words=True):
+    """Whisper 转写。默认带 word_timestamps：实测普通模式会丢句首/句尾的词（E06 Seg8 "Lumen is my narrative internship"、
+    E04 Seg5 "in his Bentley" 在普通转写里消失，逐词模式里都在），导致把好片误判成"开头丢词/结尾被吞"。"""
     with tempfile.TemporaryDirectory() as td:
-        subprocess.run([WH, clip, "--model", model, "--language", "en", "--output_format", "txt", "--output_dir", td, "--fp16", "False"], capture_output=True)
-        p = os.path.join(td, os.path.splitext(os.path.basename(clip))[0] + ".txt")
+        cmd = [WH, clip, "--model", model, "--language", "en", "--fp16", "False", "--output_dir", td,
+               "--output_format", "json" if words else "txt"] + (["--word_timestamps", "True"] if words else [])
+        subprocess.run(cmd, capture_output=True)
+        base = os.path.splitext(os.path.basename(clip))[0]
+        if words:
+            p = os.path.join(td, base + ".json")
+            if not os.path.isfile(p): return ""
+            j = json.load(open(p, encoding="utf-8"))
+            ws = [w["word"].strip() for sg in j.get("segments", []) for w in sg.get("words", [])]
+            return " ".join(ws) if ws else j.get("text", "").strip()
+        p = os.path.join(td, base + ".txt")
         return open(p, encoding="utf-8").read().strip() if os.path.isfile(p) else ""
 
 
@@ -131,6 +142,7 @@ def qc_segment(ep, seg, clip, model="small"):
     if tech["size"] and tech["size"][0] > tech["size"][1]: issues.append("画幅是横屏")
     lines_out, worst = [], 1.0
     status = "PASS"
+    hyp = ""
     lines = seg_lines(ep, seg)
     if lines and tech["audio"]:
         hyp = transcribe(clip, model)
@@ -144,6 +156,12 @@ def qc_segment(ep, seg, clip, model="small"):
                 issues.append(f"{lid}（{sp}）{'开头词丢了' if not sc['head_ok'] else '结尾被吞'}（相似度 {sc['ratio']:.2f}）"); status = "FAIL"
             elif sc["ratio"] < 0.88 and status == "PASS":
                 issues.append(f"{lid}（{sp}）个别词有差（{sc['ratio']:.2f}）"); status = "WARN"
+    # 插词：转写词数明显多于该段台词总词数 → 模型在台词里塞了没写的话（E04/E06/E09 的"..."处）
+    if lines and tech["audio"]:
+        total = sum(len(tok(t)) for _, _, t in lines)
+        got = len(tok(hyp))
+        if got > total * 1.15 + 2:
+            issues.append(f"多说了词：转写 {got} 词，台词共 {total} 词（疑似在停顿处插入了台词之外的话）"); status = "FAIL"
     if any(i for i in issues if i.startswith(("无音频", "时长", "画幅"))): status = "FAIL"
     return {"status": status, "score": round(worst, 3), "issues": issues, "lines": lines_out, "tech": tech}
 

@@ -30,8 +30,14 @@ HOLD = re.compile(r"\b(holds?|settles?|stays?|to the end|final second|freezes)\b
 def ts(t):
     m = int(t // 60); s = t - 60 * m
     return f"{m:02d}:{s:06.3f}"
-def r_en(s):  return re.sub(r'\{\{d:(L\d+)\}\}', lambda m: f"<d>[English] {L[m.group(1)]['text_en']}</d>", s)
-def r_cn(s):  return re.sub(r'\{\{q:(L\d+)\}\}', lambda m: f"\"{L[m.group(1)]['text_en']}\"", s)
+def pace(t):
+    """台词里的省略号（...）在提示词里换成逗号：用词一字不改，只改停顿记号。
+    2026-10-29 实测：E04 Seg5 / E06 Seg8 / E09 Seg6 三段的台词在"..."处被模型塞进乱码插词（"Aflac DuVarek tangles her line on us"），
+    重出 2 次都一样；14 句含省略号的台词里 4 句 <0.85，74 句不含的只有 5 句。质检仍按锁定原文（含 "..."）比对。"""
+    t = re.sub(r"\s*(?:\.{3,}|…)\s*$", ".", t.strip())
+    return re.sub(r"\s*(?:\.{3,}|…)\s*", ", ", t).replace(", ?", "?").replace(", !", "!").replace(",,", ",")
+def r_en(s):  return re.sub(r'\{\{d:(L\d+)\}\}', lambda m: f"<d>[English] {pace(L[m.group(1)]['text_en'])}</d>", s)
+def r_cn(s):  return re.sub(r'\{\{q:(L\d+)\}\}', lambda m: f"\"{pace(L[m.group(1)]['text_en'])}\"", s)
 
 SECTIONS = ['subject_definitions', 'summary', 'retention_analysis', 'detailed_description', 'overall_soundscape', 'non_diegetic_music']
 def blk(key, text): return f"<!-- EN:{key} -->\n{text}\n<!-- /EN -->"
