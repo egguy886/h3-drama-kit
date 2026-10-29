@@ -7,7 +7,22 @@
     write("E01", "标题", header=[], notes=[], segs=S)
 然后：python3 plans/e01.py && python3 tools/compose_plan.py E01 && python3 tools/build_episode.py episodes/E01 --voices voices.json
 """
-import json, os
+import json, os, re
+
+# 写分镜时就查（比 compose/build 早一轮）：否定词会外溢成画面（踩坑 #3，build 也会 ❌），这里提前给出具体位置。
+NEG_EN = re.compile(r"\b(not|no|never|without|nothing|none|cannot)\b|n't", re.I)
+NEG_CN = ["不要", "禁止", "不得", "不能", "没有", "不会", "不出现", "避免"]
+
+
+def neg_check(sid, summary, shots, cn):
+    def clean(t): return re.sub(r"\{\{d:[^}]*\}\}|\{SAY:[^}]*\}", "", t)
+    for where, t in [(f"镜{k}", x["en"]) for k, x in enumerate(shots, 1)]:
+        m = NEG_EN.findall(clean(t))
+        if m: print(f"  ⚠ Seg{sid} {where} 英文含否定词 {m}（改肯定式，例：'stays closed' 而不是 'does not open'）")
+    for where, t in [("中文说明", " ".join(cn))] + [(f"镜{k}", x["cn"]) for k, x in enumerate(shots, 1)]:
+        m = [w for w in NEG_CN if w in clean(t)]
+        if m: print(f"  ⚠ Seg{sid} {where} 含否定表达 {m}（'能不能' 里藏着 '不能'，改成 '是否'）")
+
 
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))      # 项目根（plans/ 的上一级）
 
@@ -62,6 +77,7 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     if ff: s["ff_en"], s["ff_cn"] = ff
     s["summary"] = summary; s["sound"] = QUIET_SOUND; s["sound_post"] = sound
     s["cn"] = dict(zip(("kind", "dev", "perf", "sound", "visual"), cn))
+    neg_check(id, summary, shots, cn)
     s["shots"] = shots
     if mood: s["mood"] = list(mood)
     if blocking: s["blocking"] = list(blocking)

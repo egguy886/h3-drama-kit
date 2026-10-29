@@ -140,18 +140,18 @@ def run_seg(ep, seg, a, s):
         return None
     for fld, p in files:
         iv[fld] = upload(base, p, f"{ep}_s{seg:02d}_{fld}_{os.path.basename(p)}")
-    try:
-        http("POST", base + "/api/comfy/proxy/free", {"unload_models": True, "free_memory": True}, timeout=30)   # 连续跑重模型前清显存
-    except Exception as e:
-        print("   清显存失败（不阻断）：", e)
-    t0 = time.time()
-    for k in range(3):                               # 提交前确认队列空，避免网络报错后重复提交同一段
+    for k in range(40):                              # 先等队列空（最多 10 分钟）：别的任务在跑时清显存会打断它，也避免网络报错后重复提交同一段
         try:
             if not http("GET", base + "/api/comfy/queue-status", timeout=20).get("busy"):
                 break
         except Exception:
             pass
         time.sleep(15)
+    try:
+        http("POST", base + "/api/comfy/proxy/free", {"unload_models": True, "free_memory": True}, timeout=30)   # 队列空了再清显存
+    except Exception as e:
+        print("   清显存失败（不阻断）：", e)
+    t0 = time.time()
     r = http("POST", base + "/api/workflow/generate", {"workflow_id": s["workflow_id"], "input_values": iv, "client_id": f"{ep}-s{seg:02d}"}, timeout=60)
     if not r.get("success"):
         raise RuntimeError(f"提交失败：{json.dumps(r, ensure_ascii=False)[:600]}")
@@ -217,7 +217,12 @@ def expand(spec):
 
 
 def cmd_batch(a):
-    """整批顺序出片：按集、按段依次跑；已有同 tag 成片的跳过；失败重试 --retries 次，仍失败就记下继续下一段。"""
+    """整批顺序出片：按集、按段依次跑；已有同 tag 成片的跳过。
+    每段出完立刻自动质检（tools/qc_lib.py：台词开头/结尾/整句 + 时长/音频/画幅）；FAIL 就换新种子重出，最多 --attempts 次，
+    每次结果写 episodes/Exx/06_jobs/qc.jsonl，最后由 auto_post 取账本里的最佳版本。--no-qc 可关闭。网络类失败照旧按 --retries 重试。"""
+    import random
+    sys.path.insert(0, os.path.join(PIPE, "tools"))
+    import qc_lib as Q
     s = settings(); tag = a.tag or "r1"
     log = os.path.join(PIPE, "comfy_batch.log")
 
@@ -226,27 +231,50 @@ def cmd_batch(a):
         print(line, flush=True); open(log, "a", encoding="utf-8").write(line + "\n")
 
     todo = []
+    only = {tuple(x.split(":")) for x in (a.only or [])}            # --only E11:1 E13:6 → 只重出这几段（需配新 tag，已有同 tag 成片会被跳过）
     for ep in expand(a.episodes):
         for n in seg_list(ep):
+            if only and (ep, str(n)) not in only:
+                continue
             clip_dir = os.path.join(PIPE, "episodes", ep, "07_clips")
-            have = os.path.isdir(clip_dir) and any(f.startswith(f"{ep}_seg{n:02d}_{tag}_") for f in os.listdir(clip_dir))
-            if not have:
+            have = os.path.isdir(clip_dir) and any(f.startswith(f"{ep}_seg{n:02d}_{tag}") for f in os.listdir(clip_dir))
+            tries = Q.attempts(ep, n, tag)
+            unfinished = bool(tries) and not any(r["status"] != "FAIL" for r in tries) and len(tries) < a.attempts   # 上次质检 FAIL 还没重完
+            if not have or (unfinished and not a.no_qc):
                 todo.append((ep, n))
-    say(f"批量开始：待出 {len(todo)} 段（tag {tag}，工作流 {s['workflow_id']}）")
+    say(f"批量开始：待出 {len(todo)} 段（tag {tag}，工作流 {s['workflow_id']}，自动质检{'关' if a.no_qc else '开，最多 %d 次' % a.attempts}）")
     failed, t0 = [], time.time()
     for i, (ep, n) in enumerate(todo, 1):
-        ns = argparse.Namespace(seed=None, mp=a.mp, scale=a.scale, tag=tag, dry_run=False)
-        for attempt in range(a.retries + 1):
+        done_tries = len(Q.attempts(ep, n, tag)) if not a.no_qc else 0
+        k = done_tries
+        while True:
+            t = tag if k == 0 else f"{tag}x{k + 1}"
+            seed = None if k == 0 else random.randint(1, 2**31 - 1)          # 重出必须换种子，否则同种子出同一个结果
+            ns = argparse.Namespace(seed=seed, mp=a.mp, scale=a.scale, tag=t, dry_run=False)
+            clip = None
+            for attempt in range(a.retries + 1):
+                try:
+                    st = time.time(); clip = run_seg(ep, n, ns, s)
+                    say(f"[{i}/{len(todo)}] ✅ {ep} Seg{n} {t}（{(time.time()-st)/60:.1f} 分钟）")
+                    break
+                except Exception as e:
+                    say(f"[{i}/{len(todo)}] ❌ {ep} Seg{n} 第 {attempt+1} 次失败：{str(e)[:300]}")
+                    time.sleep(20)
+            if not clip:
+                failed.append(f"{ep}-S{n}"); break
+            if a.no_qc: break
             try:
-                st = time.time(); run_seg(ep, n, ns, s)
-                say(f"[{i}/{len(todo)}] ✅ {ep} Seg{n}（{(time.time()-st)/60:.1f} 分钟）")
-                break
+                res = Q.qc_segment(ep, n, clip)
             except Exception as e:
-                say(f"[{i}/{len(todo)}] ❌ {ep} Seg{n} 第 {attempt+1} 次失败：{str(e)[:300]}")
-                time.sleep(20)
-        else:
-            failed.append(f"{ep}-S{n}")
-    say(f"批量结束：成功 {len(todo)-len(failed)}/{len(todo)}，失败 {failed or '无'}，共 {(time.time()-t0)/3600:.1f} 小时")
+                say(f"    质检出错（不阻断）：{str(e)[:200]}"); break
+            Q.ledger_add(ep, n, clip, res, tag=t)
+            say(f"    质检 {res['status']} {res['score']:.2f} {'; '.join(res['issues'])}")
+            k += 1
+            if res["status"] != "FAIL":
+                break
+            if k >= a.attempts:
+                say(f"    ⚠ {ep} Seg{n} 质检 {a.attempts} 次都 FAIL，留最佳版本待人工看"); failed.append(f"{ep}-S{n}(QC)"); break
+    say(f"批量结束：成功 {len(todo)-len(failed)}/{len(todo)}，失败/待人工 {failed or '无'}，共 {(time.time()-t0)/3600:.1f} 小时")
 
 
 if __name__ == "__main__":
@@ -258,5 +286,7 @@ if __name__ == "__main__":
     r.add_argument("--scale", type=float); r.add_argument("--tag")
     b = sub.add_parser("batch"); b.add_argument("episodes", nargs="+", help="如 E01-E10 或 E01 E03"); b.add_argument("--tag"); b.add_argument("--retries", type=int, default=1)
     b.add_argument("--mp", type=float); b.add_argument("--scale", type=float)
+    b.add_argument("--attempts", type=int, default=3, help="质检 FAIL 时最多出几次（含第一次）"); b.add_argument("--no-qc", action="store_true")
+    b.add_argument("--only", nargs="*", help="只出指定段，如 E11:1 E13:6（配 --tag r3 这类新 tag）")
     a = ap.parse_args()
     {"status": cmd_status, "run": cmd_run, "batch": cmd_batch}[a.cmd](a)

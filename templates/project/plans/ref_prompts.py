@@ -29,6 +29,14 @@ def prop(pid, v):
     body = v['en'].split(' shown in {P}: ', 1)[1]
     # 车辆等大件俯视图容易画出结构错误（P04 踏板车大灯朝天、坐垫横贴），可在 props.json 用 views 换掉
     views = v.get('views', 'hero three-quarter view, side view, top view, and a close detail')
+    if v.get('image_text'):
+        # 画面里要出现可读文字的道具（手机屏幕、便签、合同、牌面、书脊）：文字逐字写进参考图，分镜里引用这张图，不靠后期叠字（2026-10-29 用户定）。
+        # 文字只出现在这张图的提示词里，不进 props.json 的 en（en 会进视频提示词，且不能含否定词）。
+        neg = NEG.replace('no readable text, no random letters or numbers, ', 'no misspelled words, no extra text beyond the exact text given, ')
+        head = HEAD.replace('Do not invent a logo, brand, readable text, readable number, signature, watermark or graphic interface; leave documents, screens, labels and signs blank.', 'Do not invent a logo, brand, watermark or any text other than the exact text given below.')
+        return (f'{head}\n\nLayout: a 2x2 product-photo sheet on a neutral warm-grey surface with soft directional light from one side and a small contact shadow: '
+                f'{views}; identical object and identical text in all four panels, every view physically correct and consistent with the others.\n\n'
+                f'Prop: {body}.\n\nExact text, spelled letter for letter, large and sharp and fully legible, in the same wording in every panel: {v["image_text"]}\n\n{neg}')
     return (f'{HEAD}\n\nLayout: a 2x2 product-photo sheet on a neutral warm-grey surface with soft directional light from one side and a small contact shadow: '
             f'{views}; identical object, scale and wear in all four panels, every view physically correct and consistent with the others.\n\n'
             f'Prop: {body}. Any screen or label is blank.\n\n{NEG}')

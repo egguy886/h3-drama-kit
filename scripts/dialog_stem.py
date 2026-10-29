@@ -7,7 +7,7 @@
 
 用法：python3 tools/dialog_stem.py E01 [E02 ...]   （处理 episodes/Exx/07_clips/segNN_accepted.mp4，已处理过的跳过；--force 重做）
 同时写 episodes/Exx/06_jobs/ledger.jsonl 的 kept 记录（assemble_episode.py 按它取片）。
-Demucs 环境：环境变量 DEMUCS_PY，默认用项目里 tools/voiceconv/.venv（见 tools/voiceconv/README，装一次 demucs 即可）。
+Demucs 环境：环境变量 DEMUCS_PY，默认用《越线》项目里已装好的 tools/voiceconv/.venv（不重复下载模型）。
 """
 import argparse, glob, json, os, shutil, subprocess, sys, tempfile
 

@@ -9,6 +9,8 @@
 import argparse, glob, os, re, subprocess, sys, time
 
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import qc_lib as Q
 LOG = os.path.join(PIPE, "auto_post.log")
 
 
@@ -31,12 +33,22 @@ def segs_of(ep):
 
 
 def clip_for(ep, n, tag):
+    """这一段该用哪个成片：账本里质检最佳的那个；没有账本记录（老片）就取该 tag 最新的。"""
+    b = Q.best_clip(ep, n)
+    if b: return b
     c = [f for f in glob.glob(os.path.join(PIPE, "episodes", ep, "07_clips", f"{ep}_seg{n:02d}_*.mp4")) if "_vc-" not in f and f"_{tag}_" in os.path.basename(f)]
     return max(c, key=os.path.getmtime) if c else None
 
 
+def settled(ep, n, tag, attempts=3):
+    """质检重出还没跑完的段不算出齐：账本里没有通过的记录、且次数没用完 → 等。"""
+    rows = Q.attempts(ep, n, tag)
+    if not rows: return True
+    return any(r["status"] != "FAIL" for r in rows) or len(rows) >= attempts
+
+
 def ready(ep, tag):
-    return bool(segs_of(ep)) and all(clip_for(ep, n, tag) for n in segs_of(ep))
+    return bool(segs_of(ep)) and all(clip_for(ep, n, tag) and settled(ep, n, tag) for n in segs_of(ep))
 
 
 def process(ep, tag):
