@@ -29,13 +29,42 @@ SKIN_BAD = re.compile(r"\b(?:her|his|Wren's|Lucien's)?\s*(?:cheeks?|face|neck|sk
 PEOPLE = re.compile(r"\{C\d|Wren|Lucien|Sloane|Beckett|Tyler|Graham|Owen|Evelyn|Diane|Grandma|Hastings|hand|finger|figure|silhouette|man\b|woman|girl|boy|guest|crowd|people|reporter|student", re.I)
 
 
-def look_check(sid, shots, summary=""):
+LOCO = re.compile(r"\b(?:walk|walks|walking|step|steps|stepping|strides?|striding|runs? (?:to|toward|across|down|up|into|out)|running (?:to|toward|across|down|up|into|out)|dash(?:es)?|approach(?:es)?|crosses|moves? toward)\b", re.I)
+THRU = re.compile(r"\b(?:into|out of|through)\b[^.;]{0,40}\b(?:elevator|lift|door|doorway|car|room|corridor|hallway|hall|gate)\b", re.I)
+DIRWORD = re.compile(r"toward the camera|away from the camera|from behind|back to the camera|facing the camera|seen from|camera (?:inside|behind|in front)", re.I)
+AGENTLESS = re.compile(r"\b(?:already|left)\s+(?:swung\s+|standing\s+|wide\s+)?open\b|\bdoors?\s+(?:opens|swings open|slides open)\b", re.I)
+MOVES = re.compile(r"\b(?:pushes in|push(?:es)? in|pulls? back|pulls? out|pans?|tilts?|tracks?|orbits?|cranes?|dollies|dolly|whip-pans?|zooms?)\b", re.I)
+CHAOS = re.compile(r"\b(?:recoil\w*|scatter\w*|leap\w*|jump\w*|explod\w*|stampede\w*|bursting across|guests? (?:flee|duck|dive))\b", re.I)
+CAR = re.compile(r"\b(?:rear seat|back seat|backseat|inside the (?:car|Bentley|SUV)|in the (?:car|Bentley|SUV)|car interior|passenger seat|open (?:car|rear) door)\b", re.I)
+CARCAM = re.compile(r"camera (?:sits|is placed|is mounted|stays|holds) (?:in|on|at|outside)|from the (?:front|passenger|driver)|through the (?:windshield|window|side window)|from outside the", re.I)
+
+
+def start_check(ep, segs, starts):
+    """每段的首帧站位（plans/starts.py）：有人出场的段缺了 → 提示；有的话查否定词。"""
+    for sg_ in segs:
+        st = starts.get(sg_["id"])
+        if st:
+            m = NEG_EN.findall(st[0])
+            if m: print(f"  ⚠ {ep} Seg{sg_['id']} 首帧站位英文含否定词 {m}")
+        elif sg_.get("cast"):
+            print(f"  ⚠ {ep} Seg{sg_['id']} 缺首帧站位（plans/starts.py）：每段单独生成、看不到上一段，要写 0 秒时谁在哪、什么姿势、手里拿什么、机位在哪")
+
+
+def look_check(sid, shots, summary="", establish=False):
     """脸红别写（模型会画成皮炎）；朱砂痣只能写"一颗米粒大"；没有人的镜头会被渲染成空场景。只提示，不拦。"""
     for k, x in enumerate(shots, 1):
         t = re.sub(r"\{\{d:[^}]*\}\}|\{SAY:[^}]*\}", "", x["en"])
         if SKIN_BAD.search(t): print(f"  ⚠ Seg{sid} 镜{k} 脸/颈/皮肤写了发红（{SKIN_BAD.search(t).group(0).strip()}）：模型会画成皮炎红斑，情绪靠眼神和表情写")
         if re.search(r"\bmole\b", t, re.I) and "rice" not in t.lower(): print(f"  ⚠ Seg{sid} 镜{k} 朱砂痣没写成 one single rice-grain-sized：模型会画成两三颗大红点")
         if k > 1 and not PEOPLE.search(t) and re.match(r"the camera (?:opens on|cuts to) an? (?:wide|medium|close-up|high-angle|low-angle|still wide)", t, re.I): print(f"  ⚠ Seg{sid} 镜{k} 镜头里没有人/手：容易被渲染成空场景，接缝处会突兀；改成带人的特写")
+        # ---- 空间与衔接规则（2026-10-30 看片：E19/E20/E21/E04/E30/E29；参照 Higgsfield 双人同场指南）----
+        if re.search(r"\bmole\b", t, re.I) and "flat" not in t.lower(): print(f"  ⚠ Seg{sid} 镜{k} 痣没写 flat：模型会画成凸起的血珠/疹子（E29），写 'one single rice-grain-sized flat scarlet mole, flush with the skin'")
+        if k == 1 and not establish and LOCO.search(t): print(f"  ⚠ Seg{sid} 镜1 首镜里人在走动（{LOCO.search(t).group(0)}）：段缝处人物位置会跳（E19 Seg6→7），首镜让人定在上一段结尾的位置，走动放到后面镜头")
+        if THRU.search(t) and not DIRWORD.search(t): print(f"  ⚠ Seg{sid} 镜{k} 进出（{THRU.search(t).group(0)}）没写相对机位的方向：模型会把进/出画反（E21 电梯），写 'away from the camera' / 'toward the camera' / 'seen from behind'")
+        if AGENTLESS.search(t): print(f"  ⚠ Seg{sid} 镜{k} 门/车门自己开着或自己打开（{AGENTLESS.search(t).group(0)}）：观众会当成穿帮（E20），让开门的人入画（司机拉着车门）")
+        if len(MOVES.findall(t)) >= 2: print(f"  ⚠ Seg{sid} 镜{k} 一个镜头里有 {len(MOVES.findall(t))} 个运镜 {MOVES.findall(t)}：一镜只一个运镜（Higgsfield），否则人物易错位")
+        if re.search(r"\bwide\b", t, re.I) and CHAOS.search(t): print(f"  ⚠ Seg{sid} 镜{k} 全景里写了群体剧烈动作（{CHAOS.search(t).group(0)}）：模型会让所有人和家具一起乱动（E30），全景只让一个人动，其他人 'freeze and turn their heads'")
+        if CAR.search(t) and not CARCAM.search(t): print(f"  ⚠ Seg{sid} 镜{k} 车内戏没写机位（{CAR.search(t).group(0)}）：写清 'the camera sits in the front passenger seat looking back' 之类，车内只用固定机位（E04）")
 
 
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))      # 项目根（plans/ 的上一级）
@@ -92,7 +121,7 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     s["summary"] = summary; s["sound"] = QUIET_SOUND; s["sound_post"] = sound
     s["cn"] = dict(zip(("kind", "dev", "perf", "sound", "visual"), cn))
     neg_check(id, summary, shots, cn, mood)
-    look_check(id, shots)
+    look_check(id, shots, establish=(transition or {}).get("type") in ("establish", "time_cut"))
     s["shots"] = shots
     if mood: s["mood"] = list(mood)
     if blocking: s["blocking"] = list(blocking)
@@ -111,6 +140,13 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
 
 
 def write(ep, title, header, notes, segs, wear=None, per_episode=8):
+    try:
+        import importlib, starts as _st; importlib.reload(_st); ST = _st.STARTS.get(ep, {})
+    except ImportError:
+        ST = {}
+    for sg_ in segs:
+        if sg_["id"] in ST: sg_["start"] = list(ST[sg_["id"]])
+    if ST or int(ep[1:]) >= 44: start_check(ep, segs, ST)
     d = {"episode": ep, "title": title, "version": "v1", "state_locks": STATE, "header": header, "notes": notes, "segments": segs}
     if wear: d["wear"] = wear
     if len(segs) != per_episode: d["segments_per_episode"] = len(segs)   # 台词过密时放宽段数（先和制片人确认）
