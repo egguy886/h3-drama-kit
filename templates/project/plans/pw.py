@@ -139,6 +139,24 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     return s
 
 
+INDOOR_LIGHT = re.compile(r"\b(windows?|lamps?|tungsten|indoors?|interior|fireplace|chandelier|oak)\b", re.I)
+
+
+def light_check(ep, segs):
+    """室外场景配了室内光（窗光/台灯/橡木）→ 模型会把整段搬进室内（E48 露台实拍成了木墙窗边）。"""
+    try:
+        lib = os.path.join(PIPE, "library")
+        LT = json.load(open(os.path.join(lib, "styles.json"), encoding="utf-8"))
+        SC = json.load(open(os.path.join(lib, "scenes.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    for sg_ in segs:
+        sc = SC.get(sg_.get("scene_ref") or "", {}); lt = LT.get(sg_.get("light") or "", {}).get("en", "")
+        if "外/" in sc.get("name_cn", "") and INDOOR_LIGHT.search(lt):
+            print(f"⚠️ {ep} Seg{sg_['id']}：室外场景 {sg_['scene_ref']} 配了室内光 {sg_['light']}"
+                  f"（{INDOOR_LIGHT.search(lt).group(0)}）——换成室外光预设，否则会被画进室内")
+
+
 def write(ep, title, header, notes, segs, wear=None, per_episode=8):
     try:
         import importlib, starts as _st; importlib.reload(_st); ST = _st.STARTS.get(ep, {})
@@ -147,6 +165,7 @@ def write(ep, title, header, notes, segs, wear=None, per_episode=8):
     for sg_ in segs:
         if sg_["id"] in ST: sg_["start"] = list(ST[sg_["id"]])
     if ST or int(ep[1:]) >= 44: start_check(ep, segs, ST)
+    light_check(ep, segs)
     d = {"episode": ep, "title": title, "version": "v1", "state_locks": STATE, "header": header, "notes": notes, "segments": segs}
     if wear: d["wear"] = wear
     if len(segs) != per_episode: d["segments_per_episode"] = len(segs)   # 台词过密时放宽段数（先和制片人确认）
