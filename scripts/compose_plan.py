@@ -172,7 +172,8 @@ for s in src["segments"]:
     count = s.get("count") or (f"{people[0]} is the only person in this video." if len(people) == 1 else
                                f"Exactly {['zero','one','two','three','four','five','six'][len(people)]} people appear in this video: {names_list(people)}.")
     mood = s.get("mood") or src.get("mood")          # [en, cn]：本段氛围（protocols/TONE.md）
-    if mood: count = f"{count} {mood[0]}"
+    # 氛围句直接接在人数句后会被模型当台词念出来（E21/E24/E34 实测 4 段"多说了词"全是它）：标成"只用表演和光线表现"的无声注记
+    if mood: count = f"{count} Silent emotional undertone, shown only through acting and light: {mood[0]}"
     tag = "[" + " + ".join((["keyframe completion"] if relay else []) + ["reference generation"] + (["audio reference"] if audios else [])) + "]"
 
     # 中文总述
