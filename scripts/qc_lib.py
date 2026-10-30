@@ -204,9 +204,11 @@ def attempts(ep, seg, tag):
     return [r for r in ledger_read(ep) if r["seg"] == seg and (r["tag"] == tag or r["tag"].startswith(tag + "x"))]
 
 
-def best_clip(ep, seg):
-    """账本里这一段的最佳成片（先取 PASS/WARN 里分最高的，全 FAIL 则取分最高的）；没有记录返回 None。"""
-    rows = [r for r in ledger_read(ep) if r["seg"] == seg and os.path.isfile(os.path.join(PIPE, "episodes", ep, r["clip"]))]
+def best_clip(ep, seg, tag=None):
+    """账本里这一段的最佳成片（先取 PASS/WARN 里分最高的，全 FAIL 则取分最高的）；没有记录返回 None。
+    tag：只在这一轮返工（如 r5）的成片里挑——画面返工的新版质检分可能比旧版低，不限定会切回画面有毛病的旧版。"""
+    rows = [r for r in ledger_read(ep) if r["seg"] == seg and os.path.isfile(os.path.join(PIPE, "episodes", ep, r["clip"]))
+            and (not tag or f"_seg{seg:02d}_{tag}" in os.path.basename(r["clip"]))]
     if not rows: return None
     rank = {"PASS": 2, "WARN": 1, "FAIL": 0}
     rows.sort(key=lambda r: (rank[r["status"]], r["score"], r["at"]))

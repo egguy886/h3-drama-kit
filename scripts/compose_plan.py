@@ -173,8 +173,8 @@ for s in src["segments"]:
     count = s.get("count") or (f"{people[0]} is the only person in this video." if len(people) == 1 else
                                f"Exactly {['zero','one','two','three','four','five','six'][len(people)]} people appear in this video: {names_list(people)}.")
     mood = s.get("mood") or src.get("mood")          # [en, cn]：本段氛围（protocols/TONE.md）
-    # 氛围句直接接在人数句后会被模型当台词念出来（E21/E24/E34 实测 4 段"多说了词"全是它）：标成"只用表演和光线表现"的无声注记
-    if mood: count = f"{count} Silent emotional undertone, shown only through acting and light: {mood[0]}"
+    # 氛围句（剧情概括整句）会被模型当台词念出来：E21/E24/E34 实测 4 段"多说了词"全是它，标成"无声注记"后 E34 Seg2 仍被念（10-30 小试）
+    # → 英文提示词里不再放氛围句，只留中文给人看（下面 wenwu 的"氛围："）
     # 只念引号里的台词（Higgsfield："Speak only the quoted lines"）：其余句子都是无声说明，堵住氛围句/总述被念出来
     if speakers: count = f"{count} Speak only the quoted dialogue lines with accurate lip sync; every other sentence in this prompt is silent direction."
     tag = "[" + " + ".join((["keyframe completion"] if relay else []) + ["reference generation"] + (["audio reference"] if audios else [])) + "]"
@@ -223,7 +223,7 @@ for s in src["segments"]:
         "en": {"tag": tag, "first_frame": s.get("ff_en") if relay else None, "count": count,
                "subjects": subj_lines + ([f"Blocking, fixed in every shot: {expand(s['blocking'][0])}"] if s.get("blocking") else [])
                            # 首帧站位（Higgsfield 的 LOCATION AND FIRST FRAME）：每段单独生成、看不到上一段，必须写明 0 秒时谁在哪、什么姿势、手里拿什么、机位在哪（E34 Seg2 床上→站着）
-                           + ([f"First frame{'' if (s.get('transition') or {}).get('type') in ('establish', 'time_cut') else ', continuous with the previous moment'}: {expand(s['start'][0])}"] if s.get("start") else []), "audios": audios,
+                           + ([f"First frame{'' if (s.get('transition') or {}).get('type') in ('establish', 'time_cut') else ', continuous with the previous moment'} (positions and postures only; the framing of every shot follows its own shot description): {expand(s['start'][0])}"] if s.get("start") else []), "audios": audios,
                "summary": expand(s["summary"]), "retention": ret, "soundscape": s["sound"]},
         "refs": refs, "wenwu": wenwu, "shots": shots, **({"transition": s["transition"]} if s.get("transition") else {}), **({"relay_reason": s["relay_reason"]} if s.get("relay_reason") else {}), **({"seam_motive": s["seam_motive"]} if s.get("seam_motive") else {})})
     if relay and not s.get("ff_en"):
