@@ -102,7 +102,7 @@ def chunks(aligned):
         if cur and cur[-1][0] != item[0]:
             sents.append(cur); cur = []
         cur.append(item)
-        if re.search(r"[.?!]$", item[1]):
+        if re.search(r"[.?!]$", item[1]) and item[1] not in ("Mr.", "Mrs.", "Ms.", "Dr."):   # "Ms. Hale?" 不能在称呼处断句
             sents.append(cur); cur = []
     if cur: sents.append(cur)
 
@@ -133,6 +133,10 @@ def chunks(aligned):
     for i, x in enumerate(subs):
         x["end"] = max(x["end"], x["start"] + 0.9)
         if i + 1 < len(subs): x["end"] = min(x["end"], subs[i + 1]["start"] - 0.04)
+    for p, x in zip(subs, subs[1:]):                   # 推算出来的起点可能早于上一条（Whisper 丢词），保证时间只往前走
+        if x["start"] < p["start"] + 0.9:
+            x["start"] = p["start"] + 0.9; x["end"] = max(x["end"], x["start"] + 0.9)
+            p["end"] = x["start"] - 0.04
     for x in subs:                                     # 兜底：短句不会说几十秒
         nw = len(x["text"].split())
         if x["end"] - x["start"] > 6 and nw <= 10: x["end"] = x["start"] + 0.6 + 0.45 * nw
@@ -243,6 +247,7 @@ def srt_time(t):
 ap = argparse.ArgumentParser()
 ap.add_argument("episode"); ap.add_argument("--video", required=True); ap.add_argument("--words", required=True)
 ap.add_argument("--report", help="assemble_episode 的切点报告 json（默认与 --video 同名 .json）；铭牌/插入文字用段内时间时需要")
+ap.add_argument("--prep", action="store_true", help="只写 SRT 和铭牌预览图（review/plates/），不烧录")
 ap.add_argument("--overlays", help="屏幕文字插入配置（默认 episodes/Exx/overlays.json，存在才用）")
 a = ap.parse_args()
 ep = os.path.join(PIPE, "episodes", a.episode)
@@ -301,6 +306,19 @@ if _pa and rep:                                   # 设备声字幕（原项目 
     subs.sort(key=lambda x: x["start"])
     for x1, x2 in zip(subs, subs[1:]):
         if x1["end"] > x2["start"] - 0.04: x1["end"] = max(x1["start"] + 0.5, x2["start"] - 0.04)
+if a.prep:                                         # 提前准备：字幕时间轴 + 铭牌贴到当帧看位置，成片审完再正式烧
+    with open(os.path.splitext(video)[0] + "_subs.srt", "w", encoding="utf-8") as f:
+        for k, x in enumerate(subs, 1):
+            f.write(f"{k}\n{srt_time(x['start'])} --> {srt_time(x['end'])}\n{chr(10).join(wrap(x['text']))}\n\n")
+    os.makedirs(os.path.join(PIPE, "review", "plates"), exist_ok=True)
+    for pl in titles:
+        out = os.path.join(PIPE, "review", "plates", f"{a.episode}_{pl['name']}.jpg"); lay = out + ".png"
+        render_plate(pl, lay)
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-ss", str((pl["t0"] + pl["t1"]) / 2), "-i", video, "-frames:v", "1",
+                        "-vf", f"scale={W}:{H}:flags=lanczos", out + ".bg.png"], check=True)
+        Image.alpha_composite(Image.open(out + ".bg.png").convert("RGBA"), Image.open(lay)).convert("RGB").save(out, quality=88)
+        os.remove(lay); os.remove(out + ".bg.png")
+    print(f"{a.episode} 字幕 {len(subs)} 条，铭牌预览 {len(titles)} 张"); raise SystemExit
 work = os.path.join(ep, "08_edit", "subs_layers"); shutil.rmtree(work, ignore_errors=True); os.makedirs(work)
 def render_insert(it, path):
     """屏幕文字插入：alert = 红色警报大字；doc = 等宽文件/标签文字，半透明黑底 + 橙色竖线。"""
