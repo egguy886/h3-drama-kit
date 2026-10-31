@@ -96,7 +96,8 @@ for s in src["segments"]:
             extra = s.get("extra", {}).get(aid)
             line = f"<Subject {k}> is {it['name']}, {it['base_en'].replace('{P}', P)}; {wear[0]}" + (f"; {extra[0]}" if extra else "") + "."
         elif kind == "scene":
-            line = f"<Subject {k}> is {it['en'].replace('{P}', P)}. {it['layout_en']}"
+            # 学自 Higgsfield 双人同场指南：场景图只定空间，机位要新找，否则会照搬参考图构图（E21 电梯厅人物进出方向反了）
+            line = f"<Subject {k}> is {it['en'].replace('{P}', P)}. {it['layout_en']} {P} supplies only the geography, furniture, materials and light of this place; frame every shot from fresh camera positions instead of copying the reference composition."
         else:
             state = s.get("prop_state", {}).get(aid)
             line = f"<Subject {k}> is {it['en'].replace('{P}', P)}" + (f"; {state[0]}" if state else "") + "."
@@ -105,7 +106,7 @@ for s in src["segments"]:
     # 说话人编号与音频
     speakers, audios = [], []
     alltxt = " ".join(sh["en"] for sh in s["shots"])
-    for m in re.finditer(r"\{SAY:([\w-]+)\}", alltxt):
+    for m in re.finditer(r"\{SAY:([\w-]+)!?\}", alltxt):
         if m.group(1) not in speakers: speakers.append(m.group(1))
     aud_of = {}
     for aid in speakers:
@@ -128,9 +129,11 @@ for s in src["segments"]:
             if aid in aud_of:
                 return f"<Subject {sub_of[aid]}> {S}, in {it['voice_en']}, with the timbre of <Audio {aud_of[aid]}>,"
             if it["name"] in PROMPT_V:                       # 次要角色：控制词逐字原样（decisions.md）
-                return f"<Subject {sub_of[aid]}> {S}, with the fixed voice \"{PROMPT_V[it['name']]['control_prompt']}\","
+                cp = PROMPT_V[it['name']]['control_prompt']
+                if m.group(2): cp = re.sub(r"^[^:]*:\s*", "", cp)   # {SAY:ID!}：去掉 "Name, a man of N:" 开头，防被念出
+                return f"<Subject {sub_of[aid]}> {S}, with the fixed voice \"{cp}\","
             return f"<Subject {sub_of[aid]}> {S}, in {it['voice_en']},"
-        t = re.sub(r"\{SAY:([\w-]+)\}", say, t)
+        t = re.sub(r"\{SAY:([\w-]+)(!?)\}", say, t)
         t = re.sub(r"\{VO:([^}]+)\}", lambda m: f"the fixed voice \"{PROMPT_V[m.group(1)]['control_prompt']}\"" if m.group(1) in PROMPT_V else m.group(1), t)
         # 资产记号 → <Subject N>。2026-10-13 修：原正则只认 C01/S13/P15 式编号，N-xxx / X-xxx / C12F-xxx 会原样留在提示词里（E06、E10–E18 共 85 处）
         def subj(m):
@@ -172,7 +175,10 @@ for s in src["segments"]:
     count = s.get("count") or (f"{people[0]} is the only person in this video." if len(people) == 1 else
                                f"Exactly {['zero','one','two','three','four','five','six'][len(people)]} people appear in this video: {names_list(people)}.")
     mood = s.get("mood") or src.get("mood")          # [en, cn]：本段氛围（protocols/TONE.md）
-    if mood: count = f"{count} {mood[0]}"
+    # 氛围句（剧情概括整句）会被模型当台词念出来：E21/E24/E34 实测 4 段"多说了词"全是它，标成"无声注记"后 E34 Seg2 仍被念（10-30 小试）
+    # → 英文提示词里不再放氛围句，只留中文给人看（下面 wenwu 的"氛围："）
+    # 只念引号里的台词（Higgsfield："Speak only the quoted lines"）：其余句子都是无声说明，堵住氛围句/总述被念出来
+    if speakers: count = f"{count} Speak only the quoted dialogue lines with accurate lip sync; every other sentence in this prompt is silent direction."
     tag = "[" + " + ".join((["keyframe completion"] if relay else []) + ["reference generation"] + (["audio reference"] if audios else [])) + "]"
 
     # 中文总述
@@ -182,6 +188,8 @@ for s in src["segments"]:
         parts.append(f"<Picture 1> 是本段 0.0 秒的首帧（上一段最后一帧）：{s['ff_cn']}")
     if s.get("blocking"):
         parts.append(f"站位（每个镜头固定，不互换）：{s['blocking'][1]}")
+    if s.get("start"):
+        parts.append(f"首帧站位（接上一段）：{s['start'][1]}")
     life = []
     for aid in s.get("cast", []):
         it = cast[aid]; wear = s.get("wear", {}).get(aid) or src.get("wear", {}).get(aid) or [it["wear_en"], it["wear_cn"]]
@@ -215,7 +223,9 @@ for s in src["segments"]:
     plan["segments"].append({
         "id": n, "scene": s["scene"], "scene_ref": s.get("scene_ref"), "light": s["light"], "connection_to_next": s["next"], "chain": s["chain"],
         "en": {"tag": tag, "first_frame": s.get("ff_en") if relay else None, "count": count,
-               "subjects": subj_lines + ([f"Blocking, fixed in every shot: {expand(s['blocking'][0])}"] if s.get("blocking") else []), "audios": audios,
+               "subjects": subj_lines + ([f"Blocking, fixed in every shot: {expand(s['blocking'][0])}"] if s.get("blocking") else [])
+                           # 首帧站位（Higgsfield 的 LOCATION AND FIRST FRAME）：每段单独生成、看不到上一段，必须写明 0 秒时谁在哪、什么姿势、手里拿什么、机位在哪（E34 Seg2 床上→站着）
+                           + ([f"First frame{'' if (s.get('transition') or {}).get('type') in ('establish', 'time_cut') else ', continuous with the previous moment'} (positions and postures only; the framing of every shot follows its own shot description): {expand(s['start'][0])}"] if s.get("start") else []), "audios": audios,
                "summary": expand(s["summary"]), "retention": ret, "soundscape": s["sound"]},
         "refs": refs, "wenwu": wenwu, "shots": shots, **({"transition": s["transition"]} if s.get("transition") else {}), **({"relay_reason": s["relay_reason"]} if s.get("relay_reason") else {}), **({"seam_motive": s["seam_motive"]} if s.get("seam_motive") else {})})
     if relay and not s.get("ff_en"):
