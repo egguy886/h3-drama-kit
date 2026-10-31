@@ -25,9 +25,10 @@ def sd(dur, kind, en, cn, kc=None):
     return sh(dur, c, e, c)
 
 
-def dl(dur, cid, L, en, cn, tone_en, tone_cn, kind="close-up", kc=None, name=""):
+def dl(dur, cid, L, en, cn, tone_en, tone_cn, kind="close-up", kc=None, name="", nolead=False):
+    # nolead=True：声线控制词去掉开头的 "Lucien, a man of 29:"（该段被模型把它念出来时才用，其他段保持原样）
     kc = kc or _kc(kind)
-    e = f"the camera cuts to {_a(kind)} {kind} of {en}. {{SAY:{cid}}} {tone_en}, says: {{{{d:{L}}}}}"
+    e = f"the camera cuts to {_a(kind)} {kind} of {en}. {{SAY:{cid}{'!' if nolead else ''}}} {tone_en}, says: {{{{d:{L}}}}}"
     c = f"{kc}：{cn}，{tone_cn}地说：{{{{q:{L}}}}}"
     return sh(dur, f"{name}{kc}：{cn}，说 {L}", e, c, L)
 

@@ -106,7 +106,7 @@ for s in src["segments"]:
     # 说话人编号与音频
     speakers, audios = [], []
     alltxt = " ".join(sh["en"] for sh in s["shots"])
-    for m in re.finditer(r"\{SAY:([\w-]+)\}", alltxt):
+    for m in re.finditer(r"\{SAY:([\w-]+)!?\}", alltxt):
         if m.group(1) not in speakers: speakers.append(m.group(1))
     aud_of = {}
     for aid in speakers:
@@ -129,9 +129,11 @@ for s in src["segments"]:
             if aid in aud_of:
                 return f"<Subject {sub_of[aid]}> {S}, in {it['voice_en']}, with the timbre of <Audio {aud_of[aid]}>,"
             if it["name"] in PROMPT_V:                       # 次要角色：控制词逐字原样（decisions.md）
-                return f"<Subject {sub_of[aid]}> {S}, with the fixed voice \"{PROMPT_V[it['name']]['control_prompt']}\","
+                cp = PROMPT_V[it['name']]['control_prompt']
+                if m.group(2): cp = re.sub(r"^[^:]*:\s*", "", cp)   # {SAY:ID!}：去掉 "Name, a man of N:" 开头，防被念出
+                return f"<Subject {sub_of[aid]}> {S}, with the fixed voice \"{cp}\","
             return f"<Subject {sub_of[aid]}> {S}, in {it['voice_en']},"
-        t = re.sub(r"\{SAY:([\w-]+)\}", say, t)
+        t = re.sub(r"\{SAY:([\w-]+)(!?)\}", say, t)
         t = re.sub(r"\{VO:([^}]+)\}", lambda m: f"the fixed voice \"{PROMPT_V[m.group(1)]['control_prompt']}\"" if m.group(1) in PROMPT_V else m.group(1), t)
         # 资产记号 → <Subject N>。2026-10-13 修：原正则只认 C01/S13/P15 式编号，N-xxx / X-xxx / C12F-xxx 会原样留在提示词里（E06、E10–E18 共 85 处）
         def subj(m):
