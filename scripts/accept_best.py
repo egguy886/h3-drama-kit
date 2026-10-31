@@ -20,7 +20,7 @@ def eps(spec):
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(); ap.add_argument("items", nargs="+"); ap.add_argument("--all", action="store_true"); ap.add_argument("--no-rebuild", action="store_true")
+    ap = argparse.ArgumentParser(); ap.add_argument("items", nargs="+"); ap.add_argument("--all", action="store_true"); ap.add_argument("--no-rebuild", action="store_true"); ap.add_argument("--tag", help="只在这一轮返工的成片里挑（画面返工用）")
     a = ap.parse_args()
     todo = []
     if a.all:
@@ -33,7 +33,7 @@ if __name__ == "__main__":
         todo = [(x.split(":")[0].upper(), int(x.split(":")[1])) for x in a.items]
     changed = {}
     for ep, n in todo:
-        best = Q.best_clip(ep, n)
+        best = Q.best_clip(ep, n, a.tag)
         if not best: continue
         link = os.path.join(PIPE, "episodes", ep, "07_clips", f"seg{n:02d}_accepted.mp4")
         cur = os.path.realpath(link) if os.path.exists(link) else None
