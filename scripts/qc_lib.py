@@ -46,7 +46,10 @@ def tok(s):
     s = re.sub(r"[^a-z0-9' ]", " ", s).replace("'", "")
     out = []
     for w in s.split():
-        out += _num(int(w)) if w.isdigit() else [w]
+        if w.isdigit() and len(w) > 1 and w[0] == "0":   # 0806 → zero eight zero six（编号、密码按位读）
+            out += [_ONES[int(c)] for c in w]
+        else:
+            out += _num(int(w)) if w.isdigit() else [w]
     res = []
     for i, w in enumerate(out):                          # "eight hundred and twelve thousand" 的 and
         if w == "and" and res and res[-1] in set(_ONES) | set(_TENS) | {"hundred", "thousand", "million"} and i + 1 < len(out) and out[i + 1] in set(_ONES) | set(_TENS):

@@ -34,3 +34,9 @@ python3 tools/comfy_run.py batch E01-E10 --tag r1 --retries 1   # 整批顺序�
 - `plans/ref_prompts.py` 按库里的 ID 出提示词，`plans/gen_refs.py` 逐个 ID 调 Codex（支持 `--ref`、`--force`）。人物＝3 联图（脸特写 / 无头正面 / 背面），场景＝3/4 俯角空景，道具＝2×2；**状态单独一个 ID**。
 - **被否决的图必须搬出 assets/**（放 `_rejected_refs/`）：资产查找器取"每个 ID 在 assets/ 下文件名最大的那张"。
 - 道具的视角别套通用模板（踏板车俯视图会画错）；道具支持 `views` 覆盖。
+
+## 6. 费用与收尾（《错撩》实测）
+- 单段约 6.1 分钟，按 ¥2.88/小时约 ¥0.30，折合约 ¥0.02/秒（按运行记录推算，不是账单）。服务器按开机时长计费，上传慢的步骤也在计费。
+- 全部出完、停机前依次跑：`audit_final.py`（缺片、成片没用采用版、采用版还是 FAIL）→ `backdrop_scan.py`（灰底）→ 看帧。拼接、声线统一、字幕都在本地，停机不影响后期。
+- 停机后要返工得再开机。看片时把要重出的段记进 `review/再出片表.md`，一次开机出完。
+- ComfyUI 本体地址和面板只差域名前缀（uu→u），读 `/object_info`、提交 `/prompt` 走本体；上传走面板 `/api/comfy/upload/file`。
