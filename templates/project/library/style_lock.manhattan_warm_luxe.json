@@ -1,0 +1,204 @@
+{
+  "style_id": "manhattan_warm_luxe",
+  "style_name_cn": "曼哈顿暖奢浪漫喜剧（Nancy Meyers 的家 × Succession 的老钱与塔楼 × 欧美短剧的人物美感）",
+  "version": "v1",
+  "status": "已定稿（制片人 2026-11-06 看过 5 张试样和 E01 480p 整集后批准）",
+  "lens_kit_mm": {
+    "_note": "焦段只对生图有效；H3 视频里焦段词是装饰（playbook 13），视频提示词改写景别和人物占画面多大",
+    "establishing_and_walk": 35,
+    "two_shot_banter": 50,
+    "face_and_prop_insert": 85
+  },
+  "camera_grammar": {
+    "prefer": [
+      "two-shot banter at chest height, both faces readable, the speaker slightly closer to camera",
+      "close-up at eye level with the face about one third of frame height, background softly defocused",
+      "slow motivated push-in only on a turn of feeling or a reveal",
+      "insert close-up of the emerald pendant, the term sheet or a hand, lit by a grazing practical light"
+    ],
+    "avoid": [
+      "handheld documentary shake",
+      "crash zoom",
+      "360-degree orbit",
+      "slow motion",
+      "unmotivated dutch angle"
+    ],
+    "multi_person_blocking": "3+ people in a depth-axis wedge, never a flat line across the frame"
+  },
+  "lighting": {
+    "key_quality": "large soft key from a motivated source (window, lamp, city glow), gentle rim separating hair from background",
+    "key_ratio": "day dialogue about 3:1; night and intimate scenes about 5:1 with the dark side still readable",
+    "skin": "warm, luminous, true-to-life skin with fine texture and soft highlights; never waxy, never gray"
+  },
+  "signature_accent": {
+    "color": "emerald green",
+    "rule": "reserved for the pendant and story-key moments; no other costume or set dressing uses saturated emerald"
+  },
+  "zone_palettes": {
+    "julian_franklin_st": {
+      "scenes": [
+        "N-BEDROOM",
+        "F-GUEST",
+        "F-HALL",
+        "D-KITCHEN",
+        "N-STUDY"
+      ],
+      "dominant": "charcoal, aged red brick, dark oak; by day warm sun through tall factory windows",
+      "accent": "warm gold lamp and city glow",
+      "saturation": "mid"
+    },
+    "thorne_tower": {
+      "scenes": [
+        "T-PANTRY",
+        "D-FLOOR18",
+        "D-LOBBY",
+        "T-BOARD",
+        "D-OFFICE50"
+      ],
+      "dominant": "steel grey, glass white, cool even daylight",
+      "accent": "deep navy suiting and dark walnut",
+      "saturation": "low-mid, clean"
+    },
+    "vivian_everyday": {
+      "scenes": [
+        "N-PERRY",
+        "D-DUANE",
+        "D-BRATTLE",
+        "N-TRATTORIA",
+        "D-WAGON",
+        "A-HALL",
+        "A-LOBBY",
+        "N-18B"
+      ],
+      "dominant": "cream, faded denim blue, butter yellow, soft everyday daylight",
+      "accent": "tortoiseshell brown",
+      "saturation": "mid, soft"
+    },
+    "old_money_day": {
+      "scenes": [
+        "M-GROUNDS",
+        "D-SAGAPONACK"
+      ],
+      "dominant": "Hamptons sunlight, sun-bleached white, sea-grass green, bay blue",
+      "accent": "warm golden backlight on hair",
+      "saturation": "mid-high, airy"
+    },
+    "old_money_night": {
+      "scenes": [
+        "N-MANOR"
+      ],
+      "dominant": "dark walnut, deep burgundy, black-and-white marble",
+      "accent": "brass lamplight and firelight",
+      "saturation": "mid, rich"
+    },
+    "neutral": {
+      "scenes": [
+        "D-HOSPITAL"
+      ],
+      "dominant": "soft clean white and pale grey",
+      "accent": "one warm practical",
+      "saturation": "low"
+    }
+  },
+  "performance_register": {
+    "vivian": "deadpan, exact, still face with tiny eye movements; humour comes from precision",
+    "julian": "level and dry, a half-beat pause before answering, amusement only in the eyes"
+  },
+  "what_this_is_not": [
+    "crushed thriller blacks or revenge-drama gloom",
+    "teal-and-orange blockbuster grading",
+    "pink soft-focus sweetness filter",
+    "neon light strips",
+    "flat, even television lighting"
+  ],
+  "reference_prompt_suffix_en": "Style lock (Manhattan warm luxe romantic comedy): live-action photographic look with Kodak VISION3 film colour rendering, fine grain, soft highlight roll-off and clean blacks that keep detail; warm, luminous, true-to-life skin with fine texture; large soft motivated key light about 3:1; materials read clearly: oak, linen, cashmere, walnut, brass, glass. Emerald green appears only on the pendant. Not a thriller grade, not teal-and-orange, not a pink soft-focus filter, no neon.",
+  "light_presets_by_scene": {
+    "N-BEDROOM": [
+      "bedroom_rain_night"
+    ],
+    "F-GUEST": [
+      "franklin_day",
+      "bedroom_rain_night"
+    ],
+    "F-HALL": [
+      "corridor_dim",
+      "franklin_day"
+    ],
+    "D-KITCHEN": [
+      "franklin_day",
+      "bedroom_rain_night"
+    ],
+    "N-STUDY": [
+      "franklin_day",
+      "bedroom_rain_night"
+    ],
+    "T-PANTRY": [
+      "tower_day"
+    ],
+    "D-FLOOR18": [
+      "tower_day",
+      "tower_dusk"
+    ],
+    "D-LOBBY": [
+      "tower_day",
+      "lobby_evening"
+    ],
+    "T-BOARD": [
+      "tower_day",
+      "tower_dusk"
+    ],
+    "D-OFFICE50": [
+      "tower_day",
+      "tower_dusk"
+    ],
+    "A-HALL": [
+      "everyday_morning",
+      "everyday_night"
+    ],
+    "A-LOBBY": [
+      "lobby_evening",
+      "everyday_morning"
+    ],
+    "N-18B": [
+      "everyday_morning",
+      "everyday_night"
+    ],
+    "D-WAGON": [
+      "car_day"
+    ],
+    "N-PERRY": [
+      "everyday_morning",
+      "everyday_night"
+    ],
+    "D-DUANE": [
+      "shop_soft"
+    ],
+    "D-BRATTLE": [
+      "everyday_morning",
+      "everyday_night"
+    ],
+    "D-SAGAPONACK": [
+      "old_house_day"
+    ],
+    "M-GROUNDS": [
+      "hamptons_day",
+      "hamptons_golden"
+    ],
+    "N-MANOR": [
+      "manor_night"
+    ],
+    "D-HOSPITAL": [
+      "hospital_soft"
+    ],
+    "N-TRATTORIA": [
+      "trattoria_warm"
+    ]
+  },
+  "light_preset_rule": "写分镜时 seg(...) 的光效预设从这里选，第一个是默认；同一场景同一集内别换。新增场景先在 library/styles.json 补预设再用。",
+  "emerald_rule_reminder": "场景描述和资产图提示词里不要出现饱和的祖母绿/翠绿色物件（灯罩、窗帘、沙发等），绿色只留给吊坠",
+  "baseline": {
+    "video": "review/style_baseline/E01_st480.mp4",
+    "stats": "review/style_baseline/e01_stats.json",
+    "stills": "review/style_baseline/"
+  }
+}

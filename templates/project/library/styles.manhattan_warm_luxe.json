@@ -1,0 +1,70 @@
+{
+ "bedroom_rain_night": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, one large soft motivated key light about 5:1 with the dark side still readable, shallow depth of field with the background melting into soft shapes. The grade is a warm gold-and-charcoal night grade. The key light is the soft gold city glow coming through the rain-streaked glass wall at frame-right, with one small warm bedside lamp; rain runs down the outside of the glass and the room is dry; deep blacks, soft highlights.",
+  "cn": "主光是画右雨玻璃外的金色城市光，加一盏小床头灯；雨在玻璃外，室内干燥；深黑、柔和高光。"
+ },
+ "party_gold": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, one large soft motivated key light about 5:1 with the dark side still readable, shallow depth of field with the background melting into soft shapes. The grade is a warm crowded-party grade. The key light is warm gold pendant lamps and strings of small lights inside a brick loft at night; soft out-of-focus gold highlights fill the background; the room is dry and busy.",
+  "cn": "主光是砖墙 loft 里的暖金吊灯和串灯；背景是虚化的金色光斑；室内干燥、热闹。"
+ },
+ "corridor_dim": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, one large soft motivated key light about 5:1 with the dark side still readable, shallow depth of field with the background melting into soft shapes. The grade is a warm dim grade. The only light is the gold party glow spilling down a brick corridor from behind the camera, falling away into darkness at the far end; soft shadows, dry interior.",
+  "cn": "唯一的光是从机位身后涌进走廊的金色派对光，尽头渐暗；室内干燥。"
+ },
+ "franklin_day": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a warm gold-and-charcoal day look. The key light is low warm sun coming through the tall factory windows at frame-left, a large soft key about 3:1 with aged red brick and dark oak glowing and the shadows open and readable; the room is dry and lived-in.",
+  "cn": "主光是画左高大厂房窗外的低角度暖阳，大面积柔光，光比约 3:1；红砖和深橡木发暖，暗部通透；室内干燥、有生活气。"
+ },
+ "tower_day": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a cool, clean steel-grey and glass-white day look. The key light is even cool daylight from the tall glass wall, a large soft key about 3:1 with a gentle rim on hair and shoulders; deep navy suiting and dark walnut are the only deep colours; polished, quiet and expensive.",
+  "cn": "主光是整面玻璃墙的冷白日光，大面积柔光，光比约 3:1，头发和肩膀有轻轻的轮廓光；深海军蓝西装和深胡桃木是仅有的深色；干净、安静、昂贵。"
+ },
+ "tower_dusk": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a cool steel-grey dusk look with a warm edge. The key light is the last blue-gold light through the glass wall behind the people, softened by one warm desk lamp in front of them, about 4:1, faces readable and skin warm against the cool room.",
+  "cn": "主光是人物身后玻璃墙外最后的蓝金色天光，加一盏桌上暖灯补在人物正面，光比约 4:1；脸清楚、肤色暖，对比冷色的房间。"
+ },
+ "everyday_morning": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a soft cream, faded denim-blue and butter-yellow morning look. The key light is soft overcast daylight through one narrow window with a small warm lamp still on, a low-contrast key about 2.5:1, gentle shadows, a lived-in small room.",
+  "cn": "主光是一扇窄窗的柔和阴天晨光，一盏小暖灯还亮着，低反差，光比约 2.5:1，阴影柔和；奶油、褪色牛仔蓝和黄油黄；住得很实在的小房间。"
+ },
+ "everyday_night": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a warm cream and faded-blue evening look. The key light is one small warm lamp and the blue street dusk at the window, about 4:1, the lit side of the face soft and the dark side still readable.",
+  "cn": "主光是一盏小暖灯，窗外是街上的蓝色暮色，光比约 4:1，脸的亮侧柔和、暗侧仍然看得清。"
+ },
+ "shop_soft": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a clean, slightly cool commercial look with warm skin. The key light is soft overhead panel light with a warm shop-window spill from the street side, about 2.5:1, no harsh shadows, shelves and packaging crisp and colourful.",
+  "cn": "主光是店内柔和的顶部面板光，街那一侧有暖色橱窗光溢进来，光比约 2.5:1，没有硬阴影；货架和包装清楚、有颜色。"
+ },
+ "trattoria_warm": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a warm amber and walnut restaurant look. The key light is small warm pendant lamps and candles on the tables, about 4:1, soft golden pools on faces and checkered tablecloths, the room behind falling softly into shadow.",
+  "cn": "主光是桌上方的小暖色吊灯和蜡烛，光比约 4:1，脸和格子桌布上有柔和的金色光池，后面的房间柔和地沉入阴影。"
+ },
+ "car_day": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a warm natural daylight look. The key light is soft daylight through the windshield and side glass with a gentle fill from the dashboard side, about 3:1, faces readable in profile, dust and dog hair catching the light.",
+  "cn": "主光是穿过挡风玻璃和侧窗的柔和日光，仪表台一侧轻补光，光比约 3:1，侧脸清楚，灰尘和狗毛在光里发亮。"
+ },
+ "hamptons_day": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is an airy sun-bleached white, sea-grass-green and bay-blue day look. The key light is bright warm sunlight from behind the people with a soft golden rim on hair and shoulders, sky bounce filling the faces, about 3:1, open sky and a bright blue bay in the distance.",
+  "cn": "主光是人物身后明亮温暖的阳光，头发和肩膀有柔和的金色轮廓光，天空反光补亮脸，光比约 3:1，开阔的天空和远处明亮的蓝色海湾；整体是晒白的白色、海草绿和海湾蓝。"
+ },
+ "hamptons_golden": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a warm golden-hour look. The key light is low amber sun from behind the people, a glowing rim on hair and shoulders with soft open faces, about 3:1, long soft shadows across stone and lawn, the bay glowing in the distance.",
+  "cn": "主光是人物身后低角度的琥珀色夕阳，头发和肩膀有发光的轮廓光，脸柔和敞亮，光比约 3:1，石头和草坪上有长而柔的影子，远处的海湾发亮。"
+ },
+ "old_house_day": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a warm weathered-wood and sea-light look. The key light is bright soft daylight through old multi-pane windows from the bay side, about 3:1, grey shingle, worn oak floorboards and cracked white paint glowing softly, an old house that smells of salt.",
+  "cn": "主光是海湾一侧旧多格窗透进来的明亮柔和日光，光比约 3:1，灰色木瓦、磨旧的橡木地板和剥落的白漆柔和发亮；一座有咸味的老房子。"
+ },
+ "manor_night": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a rich dark-walnut, deep-burgundy and brass night look. The key light is firelight from the stone fireplace and one brass lamp, about 5:1 with the dark side still readable, warm moving light on faces, black-and-white marble falling into soft shadow.",
+  "cn": "主光是石壁炉里的火光和一盏黄铜灯，光比约 5:1，暗部仍看得清，脸上有温暖流动的光，黑白大理石地面沉入柔和的阴影。"
+ },
+ "hospital_soft": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a soft clean white and pale-grey look with warm skin. The key light is even soft daylight from a large window and ceiling panels, about 2.5:1, quiet and gentle, one warm practical lamp as the only warm accent.",
+  "cn": "主光是大窗和顶灯面板的均匀柔和日光，光比约 2.5:1，安静温和，一盏暖色台灯是唯一的暖色点缀。"
+ },
+ "lobby_evening": {
+  "en": "The target video is a live-action vertical romantic-comedy drama (9:16) shot on Kodak VISION3 film stock: fine grain, soft highlight roll-off, clean blacks that keep detail, warm luminous true-to-life skin with fine texture, shallow depth of field with the background melting into soft shapes. The grade is a warm brass and cool marble evening look. The key light is warm wall sconces and the cool street dusk through the glass doors, about 4:1, polished surfaces giving soft reflections on the floor, people lit softly from the sides.",
+  "cn": "主光是墙上的暖色壁灯和玻璃门外街上的冷色暮色，光比约 4:1，抛光表面在地面上有柔和的倒影，人物被侧面柔和地照亮。"
+ }
+}

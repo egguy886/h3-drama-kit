@@ -28,12 +28,25 @@ DEFAULTS = {
 }
 
 
+# 工作流档案：u24 = 节点编号写法（有种子和二采倍率）；zealman = U30 / U06V9 这类“参考媒体”节点（只开放 prompt、seconds、aspect_ratio、megapixels 和参考图/音频，种子固定在工作流里）
+PROFILES = {
+    "API-U24-文武双修T8版": {"kind": "u24", "alias": "u24"},
+    "API-U30": {"kind": "zealman", "alias": "u30", "mp": 0.7},
+    "API-U06V9-9图3音": {"kind": "zealman", "alias": "u6v9", "mp": 1.2},
+    "API-U32": {"kind": "zealman", "alias": "u32", "mp": 0.7, "note": "未验证接口"},
+    "API-U00-闹闹版_s": {"kind": "zealman", "alias": "nn", "mp": 0.4, "note": "闹闹版：ZealmanH3PickReferenceMedia + 封装采样模组，种子和二采不开放"},
+}
+ALIASES = {v["alias"]: k for k, v in PROFILES.items()}
+
+
 def settings():
     s = dict(DEFAULTS)
     if os.path.isfile(SET_P):
         s.update(json.load(open(SET_P, encoding="utf-8")))
     if os.environ.get("COMFY_BASE_URL"):
         s["base_url"] = os.environ["COMFY_BASE_URL"]
+    if os.environ.get("COMFY_WORKFLOW"):
+        w = os.environ["COMFY_WORKFLOW"]; s["workflow_id"] = ALIASES.get(w.lower(), w)
     s["base_url"] = s["base_url"].rstrip("/")
     if not s["base_url"]:
         raise SystemExit("先在项目根建 comfy_settings.json：{\"base_url\": \"https://你的面板地址\"}（或设环境变量 COMFY_BASE_URL）")
@@ -131,15 +144,23 @@ def run_seg(ep, seg, a, s):
     prompt, files, seed = build(ep, seg, a, s)
     mp = a.mp if a.mp is not None else s["megapixels"]
     tag = a.tag or "c1"
-    iv = {"prompt": prompt, "27:value": s["duration"], "29:aspect_ratio": s["aspect_ratio"], "29:megapixels": mp,
-          "54:value": a.scale if a.scale is not None else s["second_scale"], "11:noise_seed": seed}
-    print(f"== {ep} Seg{seg}：{len(files)} 个参考，seed {seed}，一采 {mp}MP × 二采 {iv['54:value']}，提示词 {len(prompt)} 字符")
+    prof = PROFILES.get(s["workflow_id"], {"kind": "u24"})
+    if prof["kind"] == "zealman":
+        mp = a.mp if a.mp is not None else prof.get("mp", 1.0); seed = 0
+        iv = {"prompt": prompt, "seconds": s["duration"], "aspect_ratio": s["aspect_ratio"], "megapixels": mp}
+        print(f"== {ep} Seg{seg}【{s['workflow_id']}】：{len(files)} 个参考，种子固定在工作流里，{mp}MP，提示词 {len(prompt)} 字符")
+    else:
+        iv = {"prompt": prompt, "27:value": s["duration"], "29:aspect_ratio": s["aspect_ratio"], "29:megapixels": mp,
+              "54:value": a.scale if a.scale is not None else s["second_scale"], "11:noise_seed": seed}
+        print(f"== {ep} Seg{seg}：{len(files)} 个参考，seed {seed}，一采 {mp}MP × 二采 {iv['54:value']}，提示词 {len(prompt)} 字符")
     if a.dry_run:
         for fld, p in files:
             print("   ", fld, "←", os.path.relpath(p, PIPE))
         return None
     for fld, p in files:
         iv[fld] = upload(base, p, f"{ep}_s{seg:02d}_{fld}_{os.path.basename(p)}")
+    for i_ in range(9): iv.setdefault(f"ref_image_{i_}", "zealman-blank-image.png")       # 没用到的槽位明确填空白，免得带进工作流里存的旧图
+    for i_ in range(3): iv.setdefault(f"ref_audio_{i_}", "zealman-blank-audio.mp3")
     for k in range(40):                              # 先等队列空（最多 10 分钟）：别的任务在跑时清显存会打断它，也避免网络报错后重复提交同一段
         try:
             if not http("GET", base + "/api/comfy/queue-status", timeout=20).get("busy"):
@@ -180,7 +201,7 @@ def run_seg(ep, seg, a, s):
             else:
                 raise RuntimeError("成片下载 5 次都失败")
             sec = time.time() - t0
-            rec = {"ep": ep, "seg": seg, "tag": tag, "seed": seed, "megapixels": mp, "scale": iv["54:value"], "prompt_id": pid, "file": os.path.relpath(dst, PIPE),
+            rec = {"ep": ep, "seg": seg, "tag": tag, "seed": seed, "megapixels": mp, "scale": iv.get("54:value"), "prompt_id": pid, "file": os.path.relpath(dst, PIPE),
                    "remote": vids[0]["url"], "seconds": round(sec), "workflow": s["workflow_id"], "at": time.strftime("%Y-%m-%d %H:%M:%S")}
             open(os.path.join(PIPE, "episodes", ep, "comfy_runs.jsonl"), "a", encoding="utf-8").write(json.dumps(rec, ensure_ascii=False) + "\n")
             print(f"   ✅ {rec['file']}（{sec/60:.1f} 分钟）")
@@ -288,5 +309,9 @@ if __name__ == "__main__":
     b.add_argument("--mp", type=float); b.add_argument("--scale", type=float)
     b.add_argument("--attempts", type=int, default=3, help="质检 FAIL 时最多出几次（含第一次）"); b.add_argument("--no-qc", action="store_true")
     b.add_argument("--only", nargs="*", help="只出指定段，如 E11:1 E13:6（配 --tag r3 这类新 tag）")
+    for _p in sub.choices.values():
+        _p.add_argument("--workflow", help="u24 / u30 / u6v9 / u32 或完整工作流 id；不写就用 comfy_settings.json 里的")
     a = ap.parse_args()
+    if getattr(a, "workflow", None): os.environ["COMFY_WORKFLOW"] = a.workflow
+    if getattr(a, "tag", None) is None and getattr(a, "workflow", None) and hasattr(a, "tag"): a.tag = a.workflow.lower()
     {"status": cmd_status, "run": cmd_run, "batch": cmd_batch}[a.cmd](a)
