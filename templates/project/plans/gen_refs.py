@@ -2,7 +2,7 @@
 用法：python3 plans/gen_refs.py <提示词.md> ID [ID ...] [--force] [--ref 参考图.png] [--model gpt-6-luna]
 - 已有 <ID>.png 默认跳过（--force 时另存 <ID>_vN.png，不覆盖）
 - 角色 3:2 横版三栏；场景 3:2 横版；道具 1:1（2x2 产品照）
-- 默认模型 gpt-6-luna（支持通过 --model 或环境变量 CODEX_MODEL 覆盖）；若报「不支持 ChatGPT 登录 / 需升级 Codex」，自动退到 gpt-5.6-sol（2026-11-06 Mac、Codex CLI 0.147.0 实测：gpt-6-* / gpt-6.1-* 不可用，gpt-5.6-sol/terra/luna 可用）
+- 默认模型 gpt-6-luna（支持通过 --model 或环境变量 CODEX_MODEL 覆盖）；若报「不支持 ChatGPT 登录 / 需升级 Codex」，自动退到 gpt-5.6-sol（PATH 里的旧版 npm/standalone codex（如 0.147.0）不认 gpt-6-*，桌面端自带的新内核可用：Mac 在 ChatGPT.app 里，Windows 在 AppData\\Local\\OpenAI\\Codex\\bin；脚本会先读 config.toml 的 CODEX_CLI_PATH）
 - 自动优先定位本机 Codex 桌面端最新内核 codex.exe，并通过 stdin=DEVNULL 防止 Windows 子进程阻塞
 - --ref：附一张参考图（如已定稿的脸），让 Codex 在它基础上改，保住同一张脸"""
 import glob, os, re, shutil, subprocess, sys, time
@@ -17,13 +17,15 @@ FALLBACK_MODEL = 'gpt-5.6-sol'
 def resolve_codex_bin():
     if os.environ.get('CODEX_BIN') and os.path.exists(os.environ['CODEX_BIN']):
         return os.environ['CODEX_BIN']
-    cfg = os.path.expanduser(r'~\.codex\config.toml')
+    cfg = os.path.join(os.path.expanduser('~'), '.codex', 'config.toml')
     if os.path.exists(cfg):
         txt = open(cfg, encoding='utf-8', errors='ignore').read()
         m = re.search(r"CODEX_CLI_PATH\s*=\s*['\"]([^'\"]+)['\"]", txt)
         if m and os.path.exists(m.group(1)):
             return m.group(1)
     candidates = glob.glob(os.path.expanduser(r'~\AppData\Local\OpenAI\Codex\bin\*\codex.exe'))
+    mac = '/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex'
+    if os.path.exists(mac): candidates.append(mac)
     if candidates:
         candidates.sort(key=os.path.getmtime, reverse=True)
         return candidates[0]
