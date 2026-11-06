@@ -5,13 +5,27 @@
 - 默认模型 gpt-6-luna（支持通过 --model 或环境变量 CODEX_MODEL 覆盖）；若报「不支持 ChatGPT 登录 / 需升级 Codex」，自动退到 gpt-5.6-sol（PATH 里的旧版 npm/standalone codex（如 0.147.0）不认 gpt-6-*，桌面端自带的新内核可用：Mac 在 ChatGPT.app 里，Windows 在 AppData\\Local\\OpenAI\\Codex\\bin；脚本会先读 config.toml 的 CODEX_CLI_PATH）
 - 自动优先定位本机 Codex 桌面端最新内核 codex.exe，并通过 stdin=DEVNULL 防止 Windows 子进程阻塞
 - --ref：附一张参考图（如已定稿的脸），让 Codex 在它基础上改，保住同一张脸"""
-import glob, os, re, shutil, subprocess, sys, time
+import glob, json, os, re, shutil, subprocess, sys, time
 
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = os.path.join(PIPE, 'assets', 'images')
 LOG = os.path.join(PIPE, 'assets', 'prompts', 'gen_log.txt')
 MODEL = os.environ.get('CODEX_MODEL', 'gpt-6-luna')
 FALLBACK_MODEL = 'gpt-5.6-sol'
+
+
+def load_style_suffix():
+    for cand in [os.path.join(PIPE, 'library', 'style_lock.json'), os.path.join(PIPE, 'style_lock.json')]:
+        if os.path.exists(cand):
+            try:
+                data = json.load(open(cand, encoding='utf-8'))
+                return data.get('reference_prompt_suffix_en', '')
+            except Exception:
+                pass
+    return ''
+
+
+STYLE_SUFFIX = load_style_suffix()
 
 
 def resolve_codex_bin():
@@ -48,7 +62,8 @@ text = open(src, encoding='utf-8').read()
 def prompt_of(i):
     m = re.search(rf'^## {re.escape(i)} .*?\n```\n(.*?)\n```', text, re.S | re.M)
     if not m: sys.exit(f'提示词文件里没有 {i}')
-    return m.group(1)
+    base = m.group(1).strip()
+    return (base + '\n\n' + STYLE_SUFFIX) if STYLE_SUFFIX and STYLE_SUFFIX not in base else base
 
 def target(i):
     p = os.path.join(IMG, f'{i}.png')

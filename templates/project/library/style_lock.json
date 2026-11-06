@@ -1,0 +1,61 @@
+{
+  "style_id": "industrial_mythic_revenge",
+  "style_name_cn": "暗黑工业史诗复仇风（维伦纽瓦巨物底色 × 黑泽明风雪动势 × 昆丁/朴赞郁暴烈反杀特写）",
+  "lens_kit_mm": {
+    "scale_and_power_low_angle": 24,
+    "blocking_and_combat_medium": 40,
+    "face_and_ornamental_prop_insert": 85
+  },
+  "camera_grammar": {
+    "prefer": [
+      "24mm low-angle 0.3m trunk-shot looking up at oppressor or monumental mecha/beast",
+      "40mm locked or constant-speed push along depth axis for two-hander confrontation",
+      "85mm grazing-light macro insert on metallic/bone props before sudden action",
+      "2.0m high-angle downward pressure shot after power reversal"
+    ],
+    "avoid": [
+      "crash zoom",
+      "360-degree camera orbit",
+      "handheld documentary shake",
+      "slow-motion action",
+      "unmotivated dutch angle"
+    ],
+    "horizon_rule": "Place horizon at upper 1/8 (mud/ground oppression) or lower 1/8 (monumental tower/mecha/wolf scale), never 1/2 center split.",
+    "multi_person_blocking": "Arrange 3+ figures in a depth-axis wedge (foreground left/right to midground center to background), never a flat horizontal line."
+  },
+  "lighting": {
+    "key_quality": "hard rim backlight through atmospheric medium (rain, steam, snow, ash)",
+    "key_ratio": "6:1 (8:1 on violent impact beats by cutting fill light)",
+    "depth_medium": "visible rain streaks, pressurized steam, or blowing snow starting at 3 meters, creating a 2-stop tonal gradient toward the background"
+  },
+  "zone_palettes": {
+    "industrial_slum_and_sewer": {
+      "dominant": "asphalt slate-grey, wet cast-iron black, dark mud brown",
+      "accent": "molten amber-gold dragonfire and warm halogen sodium orange",
+      "saturation": "low-mid (high purity on amber fire accent)"
+    },
+    "imperial_palace_and_boudoir": {
+      "dominant": "obsidian shadow black, dark walnut brown, gunmetal grey",
+      "accent": "deep arterial crimson velvet and burnished imperial gold",
+      "saturation": "mid-high"
+    },
+    "northern_glacier_and_wolf_valley": {
+      "dominant": "glacier cyan-grey, frost bone-white, basalt black",
+      "accent": "volcanic magma gold, emerald geothermal mist, blood red",
+      "saturation": "low on snow/rock, high on fire/blood"
+    }
+  },
+  "weather_on_body_rule": "Weather must physically alter surfaces: rain-soaked fabric clinging to skin, dark mud splattered on knuckles and cheekbones, white frost clumping on eyelashes and fur collars, sweat and steam glistening on scarred skin.",
+  "performance_register": {
+    "oppressors": "Park Chan-wook polite cruelty with a one-beat delayed facial reaction when tables turn",
+    "protagonist": "Villeneuve/Kurosawa compressed physical endurance; minimal speech, heavy breathing, decisive 0.8-1.2s single-strike burst followed by 1.5s still aftermath"
+  },
+  "what_this_is_not": [
+    "NO cyberpunk neon pink/cyan/purple LED strips",
+    "NO floating blue holographic UI screens or sci-fi laser grids",
+    "NO glossy clean plastic armor or spotless modern fabrics",
+    "NO adjective soup (epic, masterpiece, 8K, cinematic)"
+  ],
+  "reference_prompt_suffix_en": "Style lock: dark steampunk industrial mythic realism (Villeneuve monumental atmospheric scale + Kurosawa tactile weather-on-body grit + Park Chan-wook/Tarantino grazing-light material sharpness). Weathered cast iron, oxidized brass, rain/oil/mud tactile surface wear, high-contrast 6:1 directional lighting. Strictly NO cyberpunk neon LEDs, NO glossy plastic, NO floating blue holograms."
+}
+
