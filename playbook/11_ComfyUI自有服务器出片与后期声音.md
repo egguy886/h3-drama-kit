@@ -30,7 +30,7 @@ python3 tools/comfy_run.py batch E01-E10 --tag r1 --retries 1   # 整批顺序�
 手机屏幕/便签/账单上的字被生成成乱码 → 一律后期叠字；Seg1 画外音（V.O.）不进 H3，后期配；暗绿裙子在俱乐部灯光下偏黑（服装颜色写足、冷暖光别压）；未带参考图的有色衣物别在文字里点名（会被画成别的颜色）。
 
 ## 5. 参考图（Codex CLI 生图）
-- `codex exec -m gpt-5.6-luna -i <参考图> -- "<提示词>"`（`-i` 后要加 `--`，否则会吞掉提示词；ChatGPT 登录下默认模型不支持，要指定 -m）。
+- `codex exec -m gpt-5.6-sol -i <参考图> -- "<提示词>"`（`-i` 后要加 `--`，否则会吞掉提示词；ChatGPT 登录下默认模型不支持，要指定 -m；2026-11-06 实测 gpt-5.6-sol / terra / luna 可用，gpt-6-luna、gpt-6-sol、gpt-6.1-* 不支持，gpt-6-astra 需升级 Codex CLI（本机 0.147.0，最新 0.167.0）。生图由内置图像工具完成，模型只负责调用）。
 - `plans/ref_prompts.py` 按库里的 ID 出提示词，`plans/gen_refs.py` 逐个 ID 调 Codex（支持 `--ref`、`--force`）。人物＝3 联图（脸特写 / 无头正面 / 背面），场景＝3/4 俯角空景，道具＝2×2；**状态单独一个 ID**。
 - **被否决的图必须搬出 assets/**（放 `_rejected_refs/`）：资产查找器取"每个 ID 在 assets/ 下文件名最大的那张"。
 - 道具的视角别套通用模板（踏板车俯视图会画错）；道具支持 `views` 覆盖。

@@ -2,14 +2,14 @@
 用法：python3 plans/gen_refs.py <提示词.md> ID [ID ...] [--force] [--ref 参考图.png]
 - 已有 <ID>.png 默认跳过（--force 时另存 <ID>_vN.png，不覆盖）
 - 角色 3:2 横版三栏；场景 3:2 横版；道具 1:1（2x2 产品照）
-- 默认模型 gpt-6-luna 不支持 ChatGPT 登录，这里固定用 gpt-5.6-luna（见 decisions.md）
+- ChatGPT 登录下可用的最高档是 gpt-5.6-sol（2026-11-06 实测：gpt-6-luna / gpt-6-sol / gpt-6.1-* 不支持，gpt-6-astra 要求更新 Codex CLI）；固定用 gpt-5.6-sol
 - --ref：附一张参考图（如已定稿的脸），让 Codex 在它基础上改，保住同一张脸"""
 import os, re, subprocess, sys, time
 
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = os.path.join(PIPE, 'assets', 'images')
 LOG = os.path.join(PIPE, 'assets', 'prompts', 'gen_log.txt')
-MODEL = 'gpt-5.6-luna'
+MODEL = 'gpt-5.6-sol'
 
 args = sys.argv[1:]
 force = '--force' in args
