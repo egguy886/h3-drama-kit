@@ -75,7 +75,9 @@ for s in src["segments"]:
     pic = 0
     if relay:
         pic += 1; refs.append([f"Picture {pic}", f"上一段尾帧（Seg{prev['id']}）", None])
-    order = list(s.get("cast", [])) + ([s["scene_ref"]] if s.get("scene_ref") else []) + list(s.get("props", []))
+    _kp = [a for a in s.get("props", []) if a.startswith("K-") and not any(a in t for t in (cast, scenes, props))]   # 开场垫图还没出：先不带，出图后重新编译
+    if _kp: print(f"  ⚠ {ep} Seg{n} 垫图 {_kp} 还没有，先不带（出图后重新 compose + build）")
+    order = list(s.get("cast", [])) + ([s["scene_ref"]] if s.get("scene_ref") else []) + [a for a in s.get("props", []) if a not in _kp]
     for k, aid in enumerate(order, 1):
         kind, it = lib_item(aid)
         sub_of[aid] = k
@@ -206,7 +208,7 @@ for s in src["segments"]:
         else:
             parts.append(f"场景以 <Picture {pic_of[s['scene_ref']]}> 为准：{sc['cn']}。布局：{sc['layout_cn']}")
     if s.get("props"):
-        parts.append("道具：" + "；".join((f"{props[a]['cn']}（暂无参考图）" if props[a].get("noref") else f"<Picture {pic_of[a]}> {props[a]['cn']}") + (f"（{s['prop_state'][a][1]}）" if a in s.get("prop_state", {}) else "") for a in s["props"]) + "。")
+        parts.append("道具：" + "；".join((f"{lib_item(a)[1]['cn']}（暂无参考图）" if lib_item(a)[1].get("noref") else f"<Picture {pic_of[a]}> {lib_item(a)[1]['cn']}") + (f"（{s['prop_state'][a][1]}）" if a in s.get("prop_state", {}) else "") for a in s["props"] if a not in _kp) + "。")
     parts.append("光：" + styles[s["light"]]["cn"])
     if mood: parts.append("氛围：" + mood[1])
     vs = []
