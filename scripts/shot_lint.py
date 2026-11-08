@@ -66,7 +66,7 @@ LOOK = {  # 角度 / 构图 / 光 / 景别里的冲击手段
     "负空间": r"small at frame-(?:left|right|\{SIDE\})|\bsmall (?:in|at) the (?:lower|upper|edge)",
     "慢动作": r"slow motion|slow-motion",
 }
-BANNED = re.compile(r"dolly zoom|vertigo effect|bullet time|360-degree|\borbits?\b|\bFPV\b|drone shot|whip[- ]pans?|crash zoom|zooms? in (?:with \w+ amplitude )?at fast speed|cross-dissolve|the shot dissolves|dissolves? into the next|fades? (?:to|from) black|the shot fades|wipe transition|shakes? strongly|double exposure|glitch", re.I)
+BANNED = re.compile(r"bullet time|360-degree|\borbits?\b|\bFPV\b|drone shot|whip[- ]pans?|crash zoom|zooms? in (?:with \w+ amplitude )?at fast speed|cross-dissolve|the shot dissolves|dissolves? into the next|fades? (?:to|from) black|the shot fades|wipe transition|shakes? strongly|double exposure|glitch", re.I)
 EMO = re.compile(r"\b(shock|stun|startl|furi|fury|anger|angr|afraid|fear|terrif|smug|grief|horror|disbelie|dread|rage|relie|triumph|panic|guilt|hurt|resolv|resolute|defian|despair|contempt|suspici|alarm|confus|hope|humiliat|betray|devastat|moved|vulnerab|wary|at ease|tender|asham|shame|desperat|sorrow|joy|elat|stricken|haunt|broken|exhaust|determin|wonder|awe|fierce|exult|uneas|unflinch|calm)", re.I)   # 情绪词词干
 LIPS = re.compile(r"lips (?:at rest|stay closed|remain(?:s)? (?:completely )?closed|pressed shut)|back (?:turned )?to (?:the )?camera|from behind|silhouett", re.I)
 WIDE_TALK = re.compile(r"two-shot|medium shot|medium-wide|wide shot|over-the-shoulder|full-body", re.I)
@@ -162,6 +162,39 @@ def extra_lint(ep, plan, warns, errs):
             if hits:
                 errs.append(f"{ep}：淘汰词 “{pt}” 还出现 {len(hits)} 次（改设定后旧词没清干净）")
 
+
+
+# ---- 2026-11-08 新增：因果门禁（学自制片人整理的 cinematic_director_linter 思路；只取与题材无关的两条，只给 ⚠）----
+FACE = re.compile(r"\b(?:extreme close-up|close-up|close shot|medium close-up) of <Subject \d+>(?!'s (?:hands?|thumbs?|fingers?|feet|foot|knees?|wrists?|shoes?|sneakers?|ears?|back|shoulders?))|<Subject \d+>'s (?:face|mouth|lips)\b", re.I)
+SHUT = re.compile(r"\b(?:lips? (?:at rest|closed|pressed|press|stay closed|together)|mouth (?:closed|shut|at rest|stays closed)|presses? (?:his|her) lips|jaw (?:set|clenched)|bites? (?:his|her) lip)\b", re.I)
+SEEN = re.compile(r"\b(?:looks?|looking|glances?|stares?|staring|gazes?|eyes (?:on|drop|fall|go|land|lock)|sees?|notices?|spots?|reads?|reading|watch(?:es|ing)?|turns? (?:to|toward)|insert|close-up of (?:a|an|the) )", re.I)
+DEIXIS = re.compile(r"\b(?:this|that|these|those|what is|what's|whose|why is|is that)\b", re.I)
+
+
+def causal_lint(ep, plan, warns):
+    """1 对白段里拍到脸的无台词镜头要写闭嘴（否则 H3 常让旁人也动嘴）；2 指着东西发问的台词，本镜或上一镜要先“看见”。"""
+    lines = {}
+    lk = os.path.join(PIPE, "episodes", ep, "02_dialogue_lock.json")
+    if os.path.isfile(lk):
+        for x in json.load(open(lk, encoding="utf-8")).get("lines", []):
+            lines[x.get("id")] = x.get("text_en", "")
+    for s in plan["segments"]:
+        shots = s["shots"]
+        if not any(sh.get("dialogue") for sh in shots):
+            continue
+        for k, sh in enumerate(shots, 1):
+            en = sh["en"]; where = f"{ep} Seg{s['id']} 镜{k}（{sh['storyboard_cn'][:24]}）"
+            if RELAY.search(en):
+                continue
+            if not sh.get("dialogue"):
+                if FACE.search(en) and not SHUT.search(en):
+                    warns.append(f"{where}：对白段里拍到脸的无台词镜头没写闭嘴，H3 容易让这张脸也动嘴；加 lips at rest / lips pressed together")
+                continue
+            t = lines.get(sh["dialogue"], "")
+            if t.rstrip().endswith("?") and DEIXIS.search(t):
+                prev = shots[k - 2]["en"] if k > 1 else ""
+                if not SEEN.search(SPEAKCLAUSE.sub(" ", en)) and not SEEN.search(prev):
+                    warns.append(f"{where}：指着东西发问（{t[:30]}），本镜和上一镜都没写先看见它；先给视线落点或那件东西的特写，再发问")
 
 
 # ---- 2026-10-17 新增（E41 起）：学自成片《BREAK》、loopforge 14 种 H3 运镜、God-minmax-H3（protocols/LEARNINGS_break-case_h3-shots.md）----
@@ -363,6 +396,7 @@ def lint(ep, only=None):
     if only != "group":
         extra_lint(ep, plan, warns, errs)
         break_lint(ep, plan, warns, errs)
+        causal_lint(ep, plan, warns)
         rh_lint(ep, plan, warns)
     if only != "group" and n_ep >= 31 and stat["react"] and stat["react_emo"] / stat["react"] < 0.5:
         warns.append(f"{ep}：反应镜只有 {stat['react_emo']}/{stat['react']} 点名了情绪；H3 反应镜写法＝情绪词 + 两处可见泄露 + 1.5 秒内落下定住（CINEMATOGRAPHY §9）")
