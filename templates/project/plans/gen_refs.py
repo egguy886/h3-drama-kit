@@ -98,7 +98,17 @@ for i in ids:
         print(f'{MODEL} 在本机登录方式下不可用，改用 {FALLBACK_MODEL} 重试', flush=True)
         MODEL = FALLBACK_MODEL; cmd[cmd.index('-m') + 1] = MODEL
         r = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, encoding='utf-8', errors='replace')
-    ok = r.returncode == 0 and os.path.exists(out)
+    def readable(f):                       # Codex 有时只建了空文件（0 字节或只有 PNG 头）却正常退出：按能否解码判断
+        try:
+            from PIL import Image
+            Image.open(f).verify(); return True
+        except Exception:
+            return False
+    if not readable(out):                  # 从 Codex 自己的缓存里取本次最新的一张
+        import glob, shutil
+        c = [f for f in glob.glob(os.path.expanduser('~/.codex/generated_images/*/*.png')) if os.path.getmtime(f) > t and readable(f)]
+        if c: shutil.copy(max(c, key=os.path.getmtime), out)
+    ok = r.returncode == 0 and readable(out)
     line = f'{time.strftime("%m-%d %H:%M")} {i} {"✅ " + rel if ok else "❌ exit " + str(r.returncode)} {time.time() - t:.0f}s'
     print(line, flush=True)
     with open(LOG, 'a', encoding='utf-8') as f:
