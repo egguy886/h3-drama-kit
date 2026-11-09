@@ -1,12 +1,16 @@
 #!/bin/zsh
-# 出片队列：E02–E20 按集号顺序，只要某集已编译（episodes/Exx/plan.json）且还有段没出，就整集顺序出片（U24，一采 0.4MP × 二采 1.5，自动质检、FAIL 换种子重出）。
+# 出片队列：先清返工队列（plans/reroll.py），再按 E02–E30 按集号顺序，只要某集已编译（episodes/Exx/plan.json）且还有段没出，就整集顺序出片（U24，一采 0.4MP × 二采 1.5，自动质检、FAIL 换种子重出）。
 # 分镜写好一集就自动接上；服务器不空转。停掉：touch queue_stop 或 pkill -f queue_worker。
 cd "$(dirname "$0")/.."; rm -f queue_stop
+while pgrep -f "comfy_run.py batch" >/dev/null; do sleep 30; done   # 重启时先等正在跑的批次结束，免得同一集被两个进程同时出
 while [[ ! -f queue_stop ]]; do
   work=0
-  for n in $(seq 2 20); do
+  if python3 plans/reroll.py has; then              # 返工段优先（plans/reroll_queue.jsonl）
+    python3 plans/reroll.py next; continue
+  fi
+  for n in $(seq 2 30); do
     ep=$(printf E%02d $n)
-    [[ -f episodes/$ep/plan.json ]] || continue
+    [[ -f episodes/$ep/plan.json && -f episodes/$ep/READY ]] || continue
     todo=$(python3 - <<PY
 import json,os
 ep="$ep"; segs=len(json.load(open(f"episodes/{ep}/plan.json"))["segments"]); d=f"episodes/{ep}/07_clips"

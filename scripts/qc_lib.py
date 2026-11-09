@@ -36,9 +36,30 @@ def _num(n):
     return _words(n)
 
 
+# Whisper 对专名/外来词/单音节词的固定误听：原文词 → 转写里常见的误听写法（只在原文含该词时才替换）
+HOMOPHONES = {
+    "wusthof": {"weestoff", "wustoff", "vusthof", "wooster", "woosthof", "wusthoff", "weestof"},
+    "gin": {"jin", "jen", "gen", "gyn"},
+}
+
+
+_ORD = {"one": "first", "two": "second", "three": "third", "five": "fifth", "eight": "eighth", "nine": "ninth", "twelve": "twelfth"}
+
+
+def _ordinal(m):
+    ws = _num(int(m.group(1)))
+    last = ws[-1]
+    ws[-1] = _ORD.get(last, (last[:-1] + "ieth") if last.endswith("y") else last + "th")
+    return " " + " ".join(ws) + " "
+
+
 def tok(s):
     """文本 → 词序列：小写、去标点、数字转英文词、连字符拆开、数字间的 and 去掉。"""
+    import unicodedata
+    s = "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))   # Wüsthof → Wusthof
     s = s.lower().replace("’", "'").replace("—", " ").replace("-", " ").replace("$", " ")
+    s = re.sub(r"\b(\d+)(?:st|nd|rd|th)\b", _ordinal, s)       # 99th → ninety ninth
+    s = re.sub(r"\bms\b\.?", "miss", s)                       # Ms. Wen ≈ Miss Wen
     s = re.sub(r"(\d) ?,(\d{3})", r"\1\2", s)
     s = re.sub(r"(?<=\d) (?=\d{3}\b)", "", s)            # "5 000" → 5000
     s = re.sub(r"(\d+)\.(\d+)", r"\1 point \2", s)
@@ -63,6 +84,9 @@ def _snap(hyp, ref):
     vocab = set(ref)
     out = []
     for w in hyp:
+        hit = next((k for k, alts in HOMOPHONES.items() if k in vocab and w in alts), None)
+        if hit:
+            out.append(hit); continue
         if w in vocab or len(w) < 4:
             out.append(w); continue
         c = difflib.get_close_matches(w, vocab, n=1, cutoff=0.72)
@@ -181,6 +205,12 @@ def qc_segment(ep, seg, clip, model="small"):
         got = len(tok(hyp))
         if got > total * 1.15 + 2:
             issues.append(f"多说了词：转写 {got} 词，台词共 {total} 词（疑似在停顿处插入了台词之外的话）"); status = "FAIL"
+    try:                                                       # 画面自动质检：模型自带字幕 / 片头空镜（scripts/vision_qc.py，需先 swiftc -O scripts/vqc.swift -o tools/bin/vqc）
+        import vision_qc
+        vi = vision_qc.check(ep, seg, clip)
+        if vi: issues += vi; status = "FAIL"
+    except ImportError:
+        pass
     if any(i for i in issues if i.startswith(("无音频", "时长", "画幅"))): status = "FAIL"
     return {"status": status, "score": round(worst, 3), "issues": issues, "lines": lines_out, "tech": tech}
 

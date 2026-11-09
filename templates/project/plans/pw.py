@@ -9,6 +9,13 @@
 """
 import json, os, re
 
+
+try:                                   # 画面缺陷规则（自动升级同步，见 playbook/09 G 节）
+    from defect_rules import ERRS, defect_check
+except ImportError:
+    ERRS = []
+    def defect_check(*a, **k): pass
+
 # 写分镜时就查（比 compose/build 早一轮）：否定词会外溢成画面（踩坑 #3，build 也会 ❌），这里提前给出具体位置。
 NEG_EN = re.compile(r"\b(not|no|never|without|nothing|none|cannot)\b|n't", re.I)
 NEG_CN = ["不要", "禁止", "不得", "不能", "没有", "不会", "不出现", "避免"]
@@ -122,6 +129,7 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     s["cn"] = dict(zip(("kind", "dev", "perf", "sound", "visual"), cn))
     neg_check(id, summary, shots, cn, mood)
     look_check(id, shots, establish=(transition or {}).get("type") in ("establish", "time_cut"))
+    defect_check(id, shots, (props or []) + ([ref] if ref else []), cast)
     s["shots"] = shots
     if mood: s["mood"] = list(mood)
     if blocking: s["blocking"] = list(blocking)
@@ -158,6 +166,8 @@ def light_check(ep, segs):
 
 
 def write(ep, title, header, notes, segs, wear=None, per_episode=8):
+    if ERRS and not os.environ.get("LINT_OK"):
+        raise SystemExit(f"{ep}：{len(ERRS)} 处 ❌（规则见 playbook/09 G 节），plan_src 未写出；确认无误可 LINT_OK=1")
     try:
         import importlib, starts as _st; importlib.reload(_st); ST = _st.STARTS.get(ep, {})
     except ImportError:
