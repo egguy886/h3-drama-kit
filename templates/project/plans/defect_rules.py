@@ -2,7 +2,7 @@
 LEVEL：每条规则的级别。项目里按 lessons.json 的状态；同步进 skill 时由 plans/skill_sync.py 改写——已验证的保留 ❌，未验证的降为 ⚠。"""
 import json, os, re
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LEVEL = {"L01": "err", "L02": "warn", "L03": "warn", "L04": "off", "L05": "warn", "L06": "warn", "L07": "warn", "L08": "warn", "L10": "warn", "L11": "warn", "L12": "warn", "L13": "warn", "H01": "warn"}   # SKILL_SYNC_LEVEL
+LEVEL = {"L01": "err", "L02": "warn", "L03": "warn", "L04": "off", "L05": "warn", "L06": "warn", "L07": "err", "L08": "warn", "L10": "warn", "L11": "warn", "L12": "warn", "L13": "warn", "H01": "warn", "L04b": "warn"}   # SKILL_SYNC_LEVEL
 
 
 # ---- 看片意见 1（2026-11-09，E02–E17 共 40 条，报告 review/问题核实_看片意见1.md）落成的机器规则 ----
@@ -14,7 +14,7 @@ R = {
                    r"|\b(?:red|crimson|scarlet|flush\w*|blush\w*)\b[^.;]{0,30}\b(?:ears?|neck|throat|collarbone|cheeks?|hairline)\b", re.I),
  "L02": re.compile(r"\bthe sound of\b|\bknock(?:s|ing)? (?:on|at)\b|\bbang(?:s|ing)? on\b|\bpounding on\b|\bis heard\b|\brings? out\b|\bdoorbell\b|\bhammering on\b", re.I),
  "L03": re.compile(r"\beyes?\b[^.;]{0,30}\b(?:brighten\w*|lights? up|lit up|glow\w*|gleam\w*|shin(?:e|es|ing)|sparkl\w*|spark)\b|\b(?:light|spark|gleam|glint|fire)\s+in\s+(?:his|her|their)\s+eyes\b", re.I),
- "L04": re.compile(r"\b(?:hickey|love bite|kiss mark|bite marks?|teeth marks?|tooth marks?|scratch(?:es|ed|marks?)?|welts?|claw marks?|bruis\w*)\b", re.I),
+ "L04": re.compile(r"\b(?:flushed marks?|red marks?|marks? (?:on|at|down|above|under) (?:the |his |her )?(?:neck|jaw|throat|collar)|hickey|love bite|kiss mark|bite marks?|teeth marks?|tooth marks?|scratch(?:es|ed|marks?)?|welts?|claw marks?|bruis\w*)\b", re.I),
  "L05": re.compile(r"\bumbrellas?\b", re.I),
  "L06k": re.compile(r"\bkeyboard\b|\bkeys? (?:of|on) (?:the|a|her|his) (?:phone|laptop)\b|\bthumbs? (?:type|types|typing) on\b", re.I),
  "L06g": re.compile(r"\b(?:lens|lenses|glasses)\b[^.;]{0,50}\b(?:numbers?|digits?|figures?|text|letters?|words?)\b", re.I),
@@ -41,7 +41,7 @@ def defect_check(sid, shots, props, cast):
         if LEVEL.get(code) == "off": return
         print(f"  ⚠ Seg{sid} 镜{k} [{code}] {msg}")
     props = props or []
-    has_mark = any(str(p).startswith("T-MARK") for p in props)
+    has_mark = any(str(p).startswith(("T-MARK", "T-FACE")) for p in props)
     has_text = any(str(p).startswith(("T-", "K-")) for p in props)
     wear = ""
     try:
@@ -58,7 +58,8 @@ def defect_check(sid, shots, props, cast):
         m = R["L03"].search(t)
         if m and " on the " not in m.group(0): err("L03", k, f"眼睛发光写法「{m.group(0)}」：会画出火苗/发光眼（E10 杯子着火）。写 'the corners of his eyes crinkle'")
         m = R["L04"].search(t)
-        if m and not has_mark: err("L04", k, f"身体痕迹「{m.group(0)}」没有挂 T-MARK-* 参考图：会画成伤口/缝合线/溃烂（E03/E10/E11）")
+        if m and not has_mark: err("L04", k, f"身体痕迹「{m.group(0)}」没有挂 T-MARK-* 微距参考图：会画成伤口/缝合线/溃烂（E03/E10/E11）")
+        if m and has_mark and not re.search(r"\bmacro\b|extreme close-up", t, re.I): warn("L04", k, f"痕迹「{m.group(0)}」出现在非微距镜头：说话/近景里痕迹画成红色锯齿缝线（E10 S5）。痕迹只放微距镜头，说话镜头机位避开（写 seen from his right side）")
         if R["L05"].search(t) and re.search(r"\b(?:lobby|elevator|hall|office|inside|indoors|room|corridor|turnstiles?)\b", re.sub(r"\{[^}]*\}", "", t), re.I) and not re.search(r"\b(?:closed|folded|furled)\b", t, re.I): err("L05", k, "室内雨伞没写 closed/folded：会全部撑开（E03 大堂）")
         m = R["L06k"].search(t)
         if m: err("L06", k, f"键盘/打字特写「{m.group(0)}」：键帽和输入框的字会是乱码（E06）。拍拇指和屏幕边缘、或拍脸")
