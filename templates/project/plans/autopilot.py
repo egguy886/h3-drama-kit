@@ -67,6 +67,10 @@ while not os.path.exists('autopilot_stop'):
         if time.time() - last_codex > 2400 and time.time() >= time.mktime((2026, 11, 9, 0, 55, 0, 0, 0, -1)):   # Codex 额度 11-09 0:50 重置
             last_codex = time.time(); codex_fill()
         for ep in eps(): finish(ep)
+        for ep in eps():                                   # 自检补跑：拼好了但没有有效自检结果（额度用完等）→ 每轮补一集
+            a, rv = f'review/compare/{ep}_asm.mp4', f'review/自检/{ep}/review.json'
+            if os.path.exists(a) and (not os.path.exists(rv) or os.path.getmtime(rv) < os.path.getmtime(a)) and os.environ.get('SELF_REVIEW') != 'off':
+                r = run([sys.executable, 'plans/self_review.py', ep], timeout=3600); log(f'{ep} 自检补跑 → 退出码 {r.returncode}'); break
         run([sys.executable, 'plans/make_watchlist.py']); run([sys.executable, 'plans/lesson_report.py'])
         r = run([sys.executable, 'plans/skill_sync.py'])                    # 自我升级：验证过的经验同步进 skill（提交并推送 GitHub）
         if '同步进' in r.stdout or 'skill ' in r.stdout.split('同步')[-1]: log('[升级] ' + r.stdout.strip()[-300:])

@@ -74,19 +74,22 @@ PROMPT = f"""你是短剧审片员。下面是 {ep} 每一段的审片卡（一�
 没有问题就输出 []。拿不准的不要报。"""
 if model == 'codex':                                      # 默认：本机已登录的 Codex（无头 claude 需要另外登录）
     src_ = open('plans/gen_refs.py', encoding='utf-8').read().split('\nargs = sys.argv[1:]')[0]; g_ = {'__file__': 'plans/gen_refs.py'}; exec(src_, g_)
-    cmd = [g_['CODEX_BIN'], 'exec', '--skip-git-repo-check', '-s', 'read-only', '-c', 'model_reasoning_effort="medium"', '-o', f'{OUT}/_last.txt']
+    cmd = [g_['CODEX_BIN'], 'exec', '-m', os.environ.get('CODEX_MODEL', 'gpt-6-luna'), '-c', 'model_reasoning_effort="' + os.environ.get('CODEX_EFFORT', 'max') + '"', '--skip-git-repo-check', '-s', 'read-only', '-o', f'{OUT}/_last.txt']
     for c in cards: cmd += ['-i', c]
     r = subprocess.run(cmd + ['--', PROMPT.replace('用 Read 工具逐张看完这些图', '附件里的图按顺序就是这些审片卡')], stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=1800)
     txt = open(f'{OUT}/_last.txt', encoding='utf-8').read() if os.path.exists(f'{OUT}/_last.txt') else r.stdout
 else:
     r = subprocess.run(['claude', '-p', PROMPT, '--model', model, '--allowedTools', 'Read', '--output-format', 'text'], capture_output=True, text=True, timeout=1800)
     txt = r.stdout.strip()
-if not re.search(r'\[', txt or ''): log(f'{ep} 自检没拿到结果：{(txt or r.stderr)[-200:]}')
+if not re.search(r'\[', txt or ''):
+    log(f'{ep} 自检没拿到结果（不记结果，下一轮重试）：' + ('额度用完' if 'usage limit' in (txt or '') + (r.stderr or '') else (txt or r.stderr)[-200:]))
+    if os.path.exists(f'{OUT}/review.json'): os.remove(f'{OUT}/review.json')
+    sys.exit(1)
 m = re.search(r'\[.*\]', txt or '', re.S)
 try:
     items = json.loads(m.group(0)) if m else []
 except ValueError:
-    items = []; log(f'{ep} 自检输出解析失败：{txt[:200]}')
+    log(f'{ep} 自检输出解析失败（不记结果）：{txt[:200]}'); sys.exit(1)
 json.dump(items, open(f'{OUT}/review.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 log(f'{ep} 自检完成（{model}）：{len(items)} 处')
 if os.environ.get('SELF_REVIEW_DRY'):

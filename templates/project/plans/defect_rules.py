@@ -2,7 +2,7 @@
 LEVEL：每条规则的级别。项目里按 lessons.json 的状态；同步进 skill 时由 plans/skill_sync.py 改写——已验证的保留 ❌，未验证的降为 ⚠。"""
 import json, os, re
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LEVEL = {"L01": "err", "L02": "warn", "L03": "warn", "L04": "off", "L05": "warn", "L06": "warn", "L07": "err", "L08": "warn", "L10": "warn", "L11": "warn", "L12": "warn", "L13": "warn", "H01": "warn", "L04b": "warn"}   # SKILL_SYNC_LEVEL
+LEVEL = {"L01": "warn", "L02": "warn", "L03": "warn", "L04": "off", "L05": "warn", "L06": "warn", "L07": "err", "L08": "warn", "L10": "warn", "L11": "warn", "L12": "warn", "L13": "warn", "H01": "warn", "L04b": "err", "H02": "warn"}   # SKILL_SYNC_LEVEL
 
 
 # ---- 看片意见 1（2026-11-09，E02–E17 共 40 条，报告 review/问题核实_看片意见1.md）落成的机器规则 ----

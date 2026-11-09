@@ -8,7 +8,7 @@ while [[ ! -f queue_stop ]]; do
   if python3 plans/reroll.py has; then              # 返工段优先（plans/reroll_queue.jsonl）
     python3 plans/reroll.py next; continue
   fi
-  for n in $(seq 2 30); do
+  for n in $(seq 2 40); do
     ep=$(printf E%02d $n)
     [[ -f episodes/$ep/plan.json && -f episodes/$ep/READY ]] || continue
     todo=$(python3 - <<PY

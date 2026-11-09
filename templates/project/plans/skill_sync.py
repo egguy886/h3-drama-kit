@@ -22,6 +22,9 @@ human = jl('review/人工判定.jsonl'); book = jl('review/教训账本.jsonl')
 queue = {(x['ep'], x['seg']) for x in jl('plans/reroll_queue.jsonl')}
 
 
+CHECKS = {'L01': {6}, 'L02': {7, 8, 3}, 'L03': {6, 8}, 'L04': {6}, 'L04b': {6}, 'L05': {1, 2, 9}, 'L06': {5}, 'L07': {3}, 'L08': {7, 8}, 'L10': {1}, 'L11': {3, 8}, 'L12': {4}, 'L13': {2}, 'A01': {9, 1, 4}, 'V1': {5}, 'V2': {2}, 'H01': set()}   # 自检清单编号：只有同类问题再被报才算这条经验的败
+
+
 def outcome(lid, ep, seg, since):
     h = [x for x in human if x['ep'] == ep and int(x['seg']) == seg and x.get('lesson', lid) == lid]
     if h: return h[-1]['result']
@@ -36,7 +39,7 @@ def outcome(lid, ep, seg, since):
     rv = f'review/自检/{ep}/review.json'
     if os.environ.get('SELF_REVIEW') != 'off':
         if not os.path.exists(rv) or os.path.getmtime(rv) < os.path.getmtime(clip): return None      # 等自检跑完
-        if any(x['ep'] == ep and int(x.get('seg', 0)) == seg and ts(x['at']) > os.path.getmtime(clip) for x in book): return '败'
+        if any(x['ep'] == ep and int(x.get('seg', 0)) == seg and ts(x['at']) > os.path.getmtime(clip) and int(x.get('check', 0)) in CHECKS.get(lid, set(range(1, 10))) for x in book): return '败'
     return '成'
 
 
@@ -46,13 +49,12 @@ for lid, x in L.items():
     if x['kind'] == 'tool':
         log = open('autopilot.log', encoding='utf-8').read() if os.path.exists('autopilot.log') else ''
         ok = len(re.findall(r'\[自检\] E\d+ 自检完成（codex）', log)) - 1          # 第一次是 E02 校准，不算
-        bad = len(re.findall(r'自检没拿到结果', log)); res = {}
+        bad = len([m for m in re.findall(r'自检没拿到结果[^\n]*', log) if '额度' not in m and 'usage limit' not in m]); res = {}
     else:
         res = {f'{e}:{s}': outcome(lid, e, s, since) for e, s in x['tests']}
         ok = sum(v == '成' for v in res.values()); bad = sum(v == '败' for v in res.values())
-    st = x['status']
-    if st in ('验证中',):
-        st = '已验证' if ok >= 3 and bad <= 1 else '退回' if bad >= 2 else '验证中'
+    st = '已验证' if ok >= 3 and bad <= 1 else '退回' if bad >= 2 else '验证中'      # 每次都按最新证据重算（证据被修正时自动改判）
+    if x.get('synced') and st != x['status']: x['synced'] = None                       # 已同步的结论变了 → 重新同步进 skill（自我纠错）
     if (ok, bad, st) != (x['ok'], x['bad'], x['status']):
         changed.append(f"{lid} {x['title']}：成 {ok} 败 {bad} → {st}")
     x.update(ok=ok, bad=bad, status=st, results=res)
@@ -102,12 +104,12 @@ def table_row(lid, x):
         s += ('\n## G. 看片返工自动升级（plans/skill_sync.py 写入；样本＝返工后重出的段，成＝质检过且自检/人工没再报）\n'
               '| 规则 | 等级 | 证据 | 日期 |\n|---|---|---|---|\n')
     samples = '、'.join(k for k, v in x.get('results', {}).items() if v) or '自检运行记录'
-    lvl = '量产' if x['status'] == '已验证' else '无效'
+    lvl = {'已验证': '量产', '退回': '无效'}.get(x['status'], '待复核')
     row = f"| {lid} {x['title']} | {lvl} | 成 {x['ok']} 败 {x['bad']}（{samples}，《Tangled》） | {time.strftime('%Y-%m-%d')} |\n"
     s = re.sub(rf'\| {re.escape(lid)} [^\n]*\n', '', s); s += row
     open(t, 'w', encoding='utf-8').write(s)
 
-todo = [k for k, v in L.items() if v['status'] in ('已验证', '退回') and not v.get('synced')]
+todo = [k for k, v in L.items() if not v.get('synced') and (v['status'] in ('已验证', '退回') or v.get('commit'))]
 done = []
 if todo and not DRY:
     kinds = {L[k]['kind'] for k in todo}
