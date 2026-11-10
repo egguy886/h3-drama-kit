@@ -2,7 +2,7 @@
 LEVEL：每条规则的级别。项目里按 lessons.json 的状态；同步进 skill 时由 plans/skill_sync.py 改写——已验证的保留 ❌，未验证的降为 ⚠。"""
 import json, os, re
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LEVEL = {"L01": "err", "L02": "warn", "L03": "warn", "L04": "off", "L05": "warn", "L06": "warn", "L07": "err", "L08": "warn", "L10": "warn", "L11": "warn", "L12": "warn", "L13": "warn", "H01": "warn", "L04b": "err", "H02": "warn"}   # SKILL_SYNC_LEVEL
+LEVEL = {"L01": "err", "L02": "warn", "L03": "warn", "L04": "off", "L05": "warn", "L06": "warn", "L07": "err", "L08": "warn", "L10": "warn", "L11": "warn", "L12": "warn", "L13": "warn", "H01": "warn", "L04b": "err", "H02": "warn", "L14": "err", "W2": "warn", "W3": "warn"}   # SKILL_SYNC_LEVEL
 
 
 # ---- 看片意见 1（2026-11-09，E02–E17 共 40 条，报告 review/问题核实_看片意见1.md）落成的机器规则 ----
@@ -28,6 +28,9 @@ R = {
  "L11": re.compile(r"\blaptop\b", re.I),
  "L11ok": re.compile(r"from behind|over (?:her|his) shoulder|\blid\b|back of the laptop|screen glow on (?:her|his) face|faces away from the camera", re.I),
  "L13": re.compile(r"\bupside[- ]down\b|\binverted\b", re.I),
+ # L14（看片意见 2，E17 嘴唇发白 / E18 脸发灰 / E22 掌心红线）：身体部位 + 变色词 → H3 照字面把颜色涂上去
+ "L14": re.compile(r"\b(?:face|lips?|mouth|skin|palms?|cheeks?)\b[^.;,]{0,30}\b(?:white|gray|grey|pale|ashen|colou?rless|blanch\w*|red lines?)\b"
+                   r"|\b(?:go(?:es|ing)?|gone|turn(?:s|ing|ed)?) (?:white|gray|grey|pale|ashen) in the face\b|\bcolou?r (?:drain\w*|leav\w*) (?:from|out of) (?:his|her|their) face\b|\bdrained of colou?r\b", re.I),
 }
 GARMENTS = re.compile(r"\b(white (?:dress )?shirt|navy suit|dark suit|suit jacket|T-shirt|t-shirt|tank top|sweater|sweatshirt|hoodie|turtleneck|pajamas|robe|dress|blazer|cardigan)\b", re.I)
 
@@ -53,6 +56,8 @@ def defect_check(sid, shots, props, cast):
         t = re.sub(r"\{\{d:[^}]*\}\}|\{SAY:[^}]*\}", "", x["en"])
         m = R["L01"].search(t)
         if m and not _BLUSH_OK.search(t): err("L01", k, f"皮肤发红写法「{m.group(0)}」：模型会画成饱和红/烫伤（E08/E15/E17）。写 'a faint warm pink, only a shade pinker than the surrounding skin'，或干脆用表情写情绪")
+        m = R["L14"].search(t)
+        if m: err("L14", k, f"皮肤/嘴唇变色写法「{m.group(0)}」：H3 会把颜色直接涂在脸和嘴上（E17 白嘴唇、E18 灰脸、E22 掌心红线）。改写成动作和表情：僵住、嘴微张、下颌绷紧、抿嘴")
         m = R["L02"].search(t)
         if m: err("L02", k, f"声音写进了画面「{m.group(0)}」：模型会让画面里的人去制造这个声音（E02 Julian 自己敲门）。画面只写看得到的反应，声音后期配")
         m = R["L03"].search(t)
