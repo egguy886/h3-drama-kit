@@ -27,6 +27,7 @@ cd <项目目录> && python3 tools/kit_doctor.py
 | 5′ 自有 ComfyUI | `preflight.py E05-E08` → `comfy_run.py batch E05-E08 --tag r1`（每段自动质检、坏段自动换种子重出）（无单次费用，单卡串行）→ `auto_post.py E05-E08`（只留人声 + 铺环境底 + 拼接） | 服务器常开才走这条 | **playbook/11** |
 | 6 看片返工 | `h3_run.py accept/reject`、`dialogue_check.py`、`episode_sheet.py`、`motion_check.py` | 每段保留由人确认 | playbook/07 |
 | 7 后期 | `voice_fix_ep.py` → `post_voice.py` → `assemble_episode.py` → `finish_episode.py` | 成片完整看一遍 | playbook/08 |
+| 7′ 高潮点声音 | `python3 tools/post_additives.py 成片.mp4 out.mp4 --beat 上升始:上升止:落地:冻结 --report` | 手机外放能听到落地；谢帕德 −14 dB | playbook/16 |
 
 ## 硬规则
 1. **付费出片前**报 任务数 × 分辨率 × 时长 × 预估费用（768p 空闲 ¥0.45/段），等明确同意；网络异常不自动重提（先 `resume`）。
