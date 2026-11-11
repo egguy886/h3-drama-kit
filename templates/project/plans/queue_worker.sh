@@ -16,6 +16,11 @@ import json,os
 ep="$ep"; segs=len(json.load(open(f"episodes/{ep}/plan.json"))["segments"]); d=f"episodes/{ep}/07_clips"
 have=[f for f in os.listdir(d) if f.startswith(f"{ep}_seg") and "_r1" in f] if os.path.isdir(d) else []
 done={f.split("_")[1] for f in have}
+try:
+    ch=json.load(open(f"episodes/{ep}/chosen.json"))      # 已选定（返工替换过、原 r1 被清理）也算出过
+    for k,v in ch.items():
+        if os.path.exists(v): done.add("seg%02d"%int(k.split(":")[-1]))
+except Exception: pass
 print(segs-len(done))
 PY
 )

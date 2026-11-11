@@ -84,6 +84,15 @@ def bilingual(s, e, w, sd, shot_pairs, intro):
 ID_RE = re.compile(r'\b[CSP]\d{2}\b|\bP\d{2}-[A-Z]+\b')
 NEG_EN = re.compile(r"\b(not|no|never|without|nothing|none|cannot)\b|n't", re.I)
 NEG_CN = ['不要', '禁止', '不得', '不能', '没有', '不会', '不出现', '避免']
+# 真实品牌/学校名：写进人物库/道具库的长期描述会被模型整个画到衣服、包装上（Tangled E06–E40 灰 T 恤上的 Columbia 标，自检报 82 次）。
+# 主体定义（人物库 wear / 道具 / 场景描述，每段都会带上）出现 → ❌；镜头描述里出现 → ⚠（剧情需要可留，但多半会画出商标）。台词不查。
+BRAND = re.compile(r"\b(?:Columbia|Harvard|Yale|Stanford|Princeton|MIT|NYU|Ferrari|Lamborghini|Porsche|Mercedes|BMW|Tesla|Bentley|Rolls-Royce|"
+                   r"Nike|Adidas|Puma|Supreme|Patagonia|North Face|Lululemon|Uniqlo|Zara|Levi'?s|Burberry|Gucci|Prada|Chanel|Dior|Herm[eè]s|"
+                   r"Louis Vuitton|Cartier|Tiffany|Rolex|Ray-Ban|Kodak|Apple|iPhone|MacBook|Samsung|Starbucks|Coca-Cola|Coke|Pepsi|Red Bull)\b")
+try:     # 剧情需要的品牌（如主角的老 Mercedes 旅行车）写进 project.json 的 brand_allow，降为 ⚠
+    BRAND_ALLOW = set(json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(a.epdir))), 'project.json'), encoding='utf-8')).get('brand_allow', []))
+except Exception:
+    BRAND_ALLOW = set()
 LABEL = re.compile(r'<(Picture|Audio) (\d+)>')
 subtexts = [re.sub(r'[A-Za-z0-9 .\-:/$,]+', '', x['subtext_cn_NOT_FOR_PROMPT'].replace('（中文潜台词：', '').rstrip('）'))[:10] for x in lock if x['subtext_cn_NOT_FOR_PROMPT']]   # 只比对中文部分（英文名/代码会与台词原文撞车）
 
@@ -167,6 +176,16 @@ for s in segs:
     if NEG_EN.findall(scan): err(f"Seg{n} 英文描述含否定词 {NEG_EN.findall(scan)}（请改肯定式）")
     hits = [x for x in NEG_CN if x in cn]
     if hits: err(f"Seg{n} 中文含否定表达 {hits}（请改肯定式）")
+    for x in sd:
+        m = BRAND.search(x)
+        if m and m.group(0) in BRAND_ALLOW: warn(f"Seg{n} 主体定义里有品牌「{m.group(0)}」（project.json brand_allow 已放行；参考图上的标志会照画）")
+        elif m: err(f"Seg{n} 主体定义里有真实品牌/学校名「{m.group(0)}」：会被画成衣服/包装上的商标（Tangled Columbia T 恤）。改人物库/道具库的描述，写颜色和材质")
+    film = re.search(r"\b(?:Kodak|Fuji(?:film)?)\s+(?:VISION3|Eterna|Portra|\d{3}T)\b[^.,;]*", scan)   # 风格行里的胶片型号：每集只提示一次
+    if film and not globals().get('_FILM_WARNED'):
+        globals()['_FILM_WARNED'] = 1
+        warn(f"风格行写了胶片品牌「{film.group(0)[:30]}」：Tangled 自检 3 集里 Kodak 字样被印到键盘/杯子/糖盒上。新项目写 '35mm colour negative film look'，不写品牌")
+    m = BRAND.search(scan.replace(film.group(0), '') if film else scan)
+    if m: warn(f"Seg{n} 镜头描述里有真实品牌/学校名「{m.group(0)}」：模型多半会画出商标，剧情不需要就改成颜色+款式")
     out_en[n], out_cn[n] = en, cn
     metas[n] = {'segment': n, 'version': plan['version'], 'mode': 'Ref2VA', 'duration_sec': f"{plan['segment_sec']:.2f}",
                 'aspect': plan['aspect'], 'summary_tag': e['tag'], 'chain': s['chain'], 'connection_to_next': s['connection_to_next'],

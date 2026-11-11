@@ -2,7 +2,7 @@
 1. Codex 补图：缺的新场景图 / 垫图，每 40 分钟试一次（额度没了就退出码非 0，下次再试）；图一到，auto_ready 会自动重编译并放行。
 2. 已出齐的集：质检仍 FAIL 的段补出一轮（tag r2，每段只补一次）；全部有片后 make_ledger + assemble_episode → review/compare/ENN_asm.mp4，成功后删本集没选中的重出片段，
    再跑自检 plans/self_review.py（审片卡 + Codex 看卡，random 类硬伤自动进返工队列 plans/reroll.py，其余记 review/自检待办.md）。
-3. 磁盘 < 2.5GB 时只记日志，不删用户文件。
+3. 磁盘守门：< 2.5GB 记日志；< 1.5GB 暂停出片队列，> 4GB 自动恢复（disk_guard）。不删用户文件。
 停掉：touch autopilot_stop
 """
 import glob, importlib.util, json, os, subprocess, sys, time
@@ -61,6 +61,22 @@ def finish(ep):
     r = run([sys.executable, 'plans/self_review.py', ep], timeout=3600)          # 自检：审片卡 + Codex 看卡；random 硬伤自动返工
     log(f'{ep} 自检 → ' + (r.stdout.strip().splitlines() or ['(无输出)'])[-1])
 
+def disk_guard():
+    """磁盘守门（Tangled 11-10：剩 2GB 只记日志、没人看，差点写满）。
+    < 2.5GB 记 ⚠；< 1.5GB 让出片队列在当前段出完后停（touch queue_stop，记 .disk_paused），写满会把正在下载的片子写坏；
+    回到 > 4GB 且是磁盘暂停的 → 自动重启队列。不删任何用户文件。"""
+    g = free_gb()
+    if g < 1.5 and not os.path.exists('.disk_paused'):
+        open('queue_stop', 'w').write('disk'); open('.disk_paused', 'w').write(f'{g:.1f}')
+        log(f'⛔ 磁盘只剩 {g:.1f}GB：出片队列出完当前段后暂停，腾出空间（>4GB）后自动恢复')
+    elif g > 4 and os.path.exists('.disk_paused') and not running('queue_worker.sh'):
+        os.remove('.disk_paused')
+        if os.path.exists('queue_stop'): os.remove('queue_stop')
+        subprocess.Popen(['zsh', 'plans/queue_worker.sh'], cwd=PIPE, stdout=open('queue_worker.log', 'a'), stderr=subprocess.STDOUT, start_new_session=True)
+        log(f'磁盘回到 {g:.1f}GB，出片队列已恢复')
+    elif g < 2.5:
+        log(f'⚠ 磁盘只剩 {g:.1f}GB')
+
 last_codex = 0
 while not os.path.exists('autopilot_stop'):
     try:
@@ -74,7 +90,7 @@ while not os.path.exists('autopilot_stop'):
         run([sys.executable, 'plans/make_watchlist.py']); run([sys.executable, 'plans/lesson_report.py'])
         r = run([sys.executable, 'plans/skill_sync.py'])                    # 自我升级：验证过的经验同步进 skill（提交并推送 GitHub）
         if '同步进' in r.stdout or 'skill ' in r.stdout.split('同步')[-1]: log('[升级] ' + r.stdout.strip()[-300:])
-        if free_gb() < 2.5: log(f'⚠ 磁盘只剩 {free_gb():.1f}GB')
+        disk_guard()
     except Exception as e:
         log('ERR ' + str(e)[:300])
     time.sleep(600)

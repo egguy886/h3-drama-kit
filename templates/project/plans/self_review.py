@@ -108,4 +108,51 @@ for it in items:
 if auto:
     subprocess.run([sys.executable, 'plans/reroll.py', 'add', ep] + [str(s) for s in sorted(auto)] + ['--reason', '自检 random 类硬伤'])
     log(f'{ep} 自动返工 {sorted(auto)}')
+
+
+def systemic():
+    """同一个问题在 ≥3 集重复出现 = 不是随机，是提示词/人物库/风格行里写进去的（Tangled：灰 T 恤上的 Columbia 11 集、
+    风格行 Kodak 印到键盘/杯子/糖盒 3 集，都是 medium 级，只进待办没人看，累积了几十条才发现）。
+    → 重写 review/系统性问题.md，新出现的在 autopilot.log 记 ⚠ 系统性，汇报时必须先说这个。"""
+    try:
+        cast = json.load(open('library/cast.json', encoding='utf-8'))
+        names = {w for v in cast.values() if isinstance(v, dict) for w in str(v.get('name', '')).split()}
+    except Exception:
+        names = set()
+    stop = names | {'This', 'The', 'Seg', 'Subject', 'Python'}
+    NOUNS = ['围巾', '眼镜', '戒指', '项链', '吊坠', '外套', 'T恤', 'T 恤', '裙', '领带', '纱布', '伤口', '品牌', '标志', '乱码', '字幕', '手表', '包']
+    book = [json.loads(x) for x in open('review/教训账本.jsonl', encoding='utf-8')]
+    recent = sorted({b['ep'] for b in book})[-8:]
+    hits = {}
+    for b in book:
+        for t in set(re.findall(r"[A-Za-z][A-Za-z'\-]{2,}", b['problem'])) - stop:
+            hits.setdefault(('词', t), []).append(b)
+        if b['ep'] in recent:
+            for w in NOUNS:
+                if w in b['problem']: hits.setdefault(('物', w), []).append(b)
+    rows = []
+    for (kind, t), bs in hits.items():
+        eps_ = sorted({b['ep'] for b in bs})
+        if len(eps_) >= (3 if kind == '词' else 4):
+            rows.append((len(eps_), t, eps_, bs[-1]['problem']))
+    rows.sort(reverse=True)
+    out = ['# 系统性问题（plans/self_review.py 自动生成；同一问题 ≥3 集出现）', '',
+           '处理：查人物库 library/*.json、风格行 library/styles.json、道具/场景描述里是不是把它写进去了；改源头，再落成 build_episode / defect_rules 规则。', '']
+    for k, t, eps_, ex in rows:
+        out.append(f'- **{t}**：{k} 集（{", ".join(eps_)}），共 {len(hits.get(("词", t)) or hits.get(("物", t)))} 条。例：{ex}')
+    open('review/系统性问题.md', 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+    seenf = 'review/.systemic_seen.json'
+    seen = set(json.load(open(seenf))) if os.path.exists(seenf) else set()
+    new = [t for _, t, _, _ in rows if t not in seen]
+    for k, t, eps_, ex in rows:
+        if t in new: log(f'⚠ 系统性：「{t}」已在 {k} 集出现（{eps_[0]}…{eps_[-1]}），见 review/系统性问题.md')
+    json.dump(sorted(seen | set(new)), open(seenf, 'w'))
+    return new
+
+
+try:
+    new_sys = systemic()
+    if new_sys: print(f'⚠ 新的系统性问题：{new_sys}（review/系统性问题.md）')
+except Exception as e:
+    log(f'系统性统计出错：{e}')
 print(f'{ep} 自检 {len(items)} 处；自动返工 {sorted(auto)}')

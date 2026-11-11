@@ -259,6 +259,12 @@ def cmd_batch(a):
                 continue
             clip_dir = os.path.join(PIPE, "episodes", ep, "07_clips")
             have = os.path.isdir(clip_dir) and any(f.startswith(f"{ep}_seg{n:02d}_{tag}") for f in os.listdir(clip_dir))
+            if not have:   # 已在 chosen.json 选定（返工片已替换、原 r1 已被清理）也算有，不重出
+                try:
+                    ch = json.load(open(os.path.join(PIPE, "episodes", ep, "chosen.json")))
+                    have = any(k.split(":")[-1] == str(n) and os.path.exists(os.path.join(PIPE, v)) for k, v in ch.items())
+                except Exception:
+                    pass
             tries = Q.attempts(ep, n, tag)
             unfinished = bool(tries) and not any(r["status"] != "FAIL" for r in tries) and len(tries) < a.attempts   # 上次质检 FAIL 还没重完
             if not have or (unfinished and not a.no_qc):
