@@ -89,6 +89,8 @@ NEG_CN = ['不要', '禁止', '不得', '不能', '没有', '不会', '不出现
 BRAND = re.compile(r"\b(?:Columbia|Harvard|Yale|Stanford|Princeton|MIT|NYU|Ferrari|Lamborghini|Porsche|Mercedes|BMW|Tesla|Bentley|Rolls-Royce|"
                    r"Nike|Adidas|Puma|Supreme|Patagonia|North Face|Lululemon|Uniqlo|Zara|Levi'?s|Burberry|Gucci|Prada|Chanel|Dior|Herm[eè]s|"
                    r"Louis Vuitton|Cartier|Tiffany|Rolex|Ray-Ban|Kodak|Apple|iPhone|MacBook|Samsung|Starbucks|Coca-Cola|Coke|Pepsi|Red Bull)\b")
+PACK = re.compile(r"\b(?:cups?|mugs?|tins?|cartons?|packets?|bottles?|jars?|wrappers?|keypads?|(?:paper|garment|dry-cleaning|shopping) bags?|(?:pizza|tissue|gift|cardboard|takeout) box(?:es)?)\b", re.I)
+PLAIN = re.compile(r"\b(?:plain|blank|unmarked|clear|bare|glass)\b", re.I)
 try:     # 剧情需要的品牌（如主角的老 Mercedes 旅行车）写进 project.json 的 brand_allow，降为 ⚠
     BRAND_ALLOW = set(json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(a.epdir))), 'project.json'), encoding='utf-8')).get('brand_allow', []))
 except Exception:
@@ -180,10 +182,11 @@ for s in segs:
         m = BRAND.search(x)
         if m and m.group(0) in BRAND_ALLOW: warn(f"Seg{n} 主体定义里有品牌「{m.group(0)}」（project.json brand_allow 已放行；参考图上的标志会照画）")
         elif m: err(f"Seg{n} 主体定义里有真实品牌/学校名「{m.group(0)}」：会被画成衣服/包装上的商标（Tangled Columbia T 恤）。改人物库/道具库的描述，写颜色和材质")
-    film = re.search(r"\b(?:Kodak|Fuji(?:film)?)\s+(?:VISION3|Eterna|Portra|\d{3}T)\b[^.,;]*", scan)   # 风格行里的胶片型号：每集只提示一次
-    if film and not globals().get('_FILM_WARNED'):
-        globals()['_FILM_WARNED'] = 1
-        warn(f"风格行写了胶片品牌「{film.group(0)[:30]}」：Tangled 自检 3 集里 Kodak 字样被印到键盘/杯子/糖盒上。新项目写 '35mm colour negative film look'，不写品牌")
+    film = re.search(r"\b(?:Kodak|Fuji(?:film)?)\s+(?:VISION3|Eterna|Portra|\d{3}T)\b[^.,;]*", scan)   # 风格行里的胶片型号是色彩参考，保留（制片人 2026-11-11：怕影响全剧色彩统一）
+    for k, sh in enumerate(s['shots'], 1):        # 胶片品牌偶尔被印到道具表面（Tangled 键盘/杯子/糖盒，40 集 6 条）→ 易印字的包装写素面
+        for pm in PACK.finditer(sh['en']):
+            if not PLAIN.search(sh['en'][max(0, pm.start() - 40):pm.start()]):
+                warn(f"Seg{n} 镜头{k} 有易印字的包装/杯子「{pm.group(0)}」没写素面（plain/blank/clear）：模型可能印上 Kodak 或乱码。写 'a plain white mug' 这类"); break
     m = BRAND.search(scan.replace(film.group(0), '') if film else scan)
     if m: warn(f"Seg{n} 镜头描述里有真实品牌/学校名「{m.group(0)}」：模型多半会画出商标，剧情不需要就改成颜色+款式")
     out_en[n], out_cn[n] = en, cn

@@ -26,8 +26,21 @@ def _shot1(ep, seg):
         return 0.0, None
 
 
+def _prop_text(ep, seg):
+    """本段挂的带字道具（props.json 的 image_text）里的词：画面上这张纸/屏幕本来就该有字，台词又恰好念到它时别当成字幕
+    （E42 Seg3：她举着"SUPERVISORY RELATIONSHIP DISCLOSURE"表格说出表名，3 个种子全被判 V1）。"""
+    try:
+        src = json.load(open(os.path.join(PIPE, "episodes", ep, "plan_src.json"), encoding="utf-8"))
+        s = next(x for x in src["segments"] if str(x["id"]) == str(seg))
+        props = json.load(open(os.path.join(PIPE, "library", "props.json"), encoding="utf-8"))
+        return set(_toks(" ".join(str(props.get(i, {}).get("image_text", "")) for i in s.get("props") or [])))
+    except Exception:
+        return set()
+
+
 def subtitles(ep, seg, clip):
     lines = _dialog(ep, seg)
+    on_prop = _prop_text(ep, seg)
     if not lines or not os.path.exists(BIN): return []
     td = tempfile.mkdtemp()
     try:
@@ -39,6 +52,7 @@ def subtitles(ep, seg, clip):
             d = json.loads(l); t = int(os.path.basename(d["f"])[:2]) - 1
             for x in d["t"]:
                 w = _toks(x["s"])
+                if on_prop and sum(any(q.startswith(t) for q in on_prop) for t in set(w)) >= max(2, 0.8 * len(set(w))): continue   # 字在道具上（参考图本来就有）
                 for L in lines:
                     ov = len(set(w) & set(L))
                     if (len(w) >= 3 and ov >= max(2, 0.6 * len(w))) or (len(w) >= 2 and ov == len(w) and len(L) <= 6):
