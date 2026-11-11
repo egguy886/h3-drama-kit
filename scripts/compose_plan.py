@@ -47,6 +47,14 @@ PROMPT_V = {v["character"]: v for v in voices.get("prompt_voices", [])}
 
 ep = sys.argv[1]
 epdir = os.path.join(PIPE, "episodes", ep)
+# 风格行按集换写法（project.json style_swaps）：已出的集保持原文，返工时画面一致；新集用新写法。
+# Tangled：E42 起去掉 "Kodak VISION3"（Kodak 字样会被印到道具上，E09/E21/E41）。
+for sw in PROJ.get("style_swaps", []):
+    if int(ep[1:]) >= int(sw["from_ep"]):
+        for v in styles.values():
+            for lang in ("en", "cn"):
+                if isinstance(v, dict) and isinstance(v.get(lang), str):
+                    v[lang] = v[lang].replace(sw["from"], sw["to"])
 src = json.load(open(os.path.join(epdir, "plan_src.json"), encoding="utf-8"))
 lock = {x["id"]: x for x in json.load(open(os.path.join(epdir, "02_dialogue_lock.json"), encoding="utf-8"))["lines"]}
 

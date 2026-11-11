@@ -111,7 +111,7 @@
     "neon light strips",
     "flat, even television lighting"
   ],
-  "reference_prompt_suffix_en": "Style lock (Manhattan warm luxe romantic comedy): live-action photographic look with Kodak VISION3 film colour rendering, fine grain, soft highlight roll-off and clean blacks that keep detail; warm, luminous, true-to-life skin with fine texture; large soft motivated key light about 3:1; materials read clearly: oak, linen, cashmere, walnut, brass, glass. Emerald green appears only on the pendant. Not a thriller grade, not teal-and-orange, not a pink soft-focus filter, no neon.",
+  "reference_prompt_suffix_en": "Style lock (Manhattan warm luxe romantic comedy): live-action photographic look with 35mm colour negative film colour rendering, fine grain, soft highlight roll-off and clean blacks that keep detail; warm, luminous, true-to-life skin with fine texture; large soft motivated key light about 3:1; materials read clearly: oak, linen, cashmere, walnut, brass, glass. Emerald green appears only on the pendant. Not a thriller grade, not teal-and-orange, not a pink soft-focus filter, no neon.",
   "light_presets_by_scene": {
     "N-BEDROOM": [
       "bedroom_rain_night"
