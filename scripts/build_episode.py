@@ -86,10 +86,8 @@ NEG_EN = re.compile(r"\b(not|no|never|without|nothing|none|cannot)\b|n't", re.I)
 NEG_CN = ['不要', '禁止', '不得', '不能', '没有', '不会', '不出现', '避免']
 # 真实品牌/学校名：写进人物库/道具库的长期描述会被模型整个画到衣服、包装上（Tangled E06–E40 灰 T 恤上的 Columbia 标，自检报 82 次）。
 # 主体定义（人物库 wear / 道具 / 场景描述，每段都会带上）出现 → ❌；镜头描述里出现 → ⚠（剧情需要可留，但多半会画出商标）。台词不查。
-BRAND = re.compile(r"\b(?:Columbia|Harvard|Yale|Stanford|Princeton|MIT|NYU|Ferrari|Lamborghini|Porsche|Mercedes|BMW|Tesla|Bentley|Rolls-Royce|"
-                   r"Nike|Adidas|Puma|Supreme|Patagonia|North Face|Lululemon|Uniqlo|Zara|Levi'?s|Burberry|Gucci|Prada|Chanel|Dior|Herm[eè]s|"
-                   r"Louis Vuitton|Cartier|Tiffany|Rolex|Ray-Ban|Kodak|Apple|iPhone|MacBook|Samsung|Starbucks|Coca-Cola|Coke|Pepsi|Red Bull)\b")
-PACK = re.compile(r"\b(?:steering wheels?|laptops?|cereal boxe?s?|cups?|mugs?|tins?|cartons?|packets?|bottles?|jars?|wrappers?|keypads?|(?:paper|garment|dry-cleaning|shopping) bags?|(?:pizza|tissue|gift|cardboard|takeout) box(?:es)?)\b", re.I)
+BRAND = re.compile(r"\b(?:Columbia|Harvard|Yale|Stanford|Princeton|MIT|NYU|Nike|Adidas|Puma|Supreme|Patagonia|North Face|Lululemon|Uniqlo|Levi'?s|Burberry|Gucci|Prada|Chanel|Dior|Louis Vuitton|Kodak)\b")   # 只管会被画成大标志的衣服/学校名；电脑的苹果标、车标、手机这类正常出现的品牌不管（制片人 2026-11-11：露品牌没问题）
+PACK = re.compile(r"\b(?:cups?|mugs?|tins?|cartons?|packets?|bottles?|jars?|wrappers?|keypads?|(?:paper|garment|dry-cleaning|shopping) bags?|(?:pizza|tissue|gift|cardboard|takeout) box(?:es)?)\b", re.I)
 PLAIN = re.compile(r"\b(?:plain|blank|unmarked|clear|bare|glass|matte)\b", re.I)
 try:     # 剧情需要的品牌（如主角的老 Mercedes 旅行车）写进 project.json 的 brand_allow，降为 ⚠
     BRAND_ALLOW = set(json.load(open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(a.epdir))), 'project.json'), encoding='utf-8')).get('brand_allow', []))
@@ -181,7 +179,7 @@ for s in segs:
     for x in sd:
         m = BRAND.search(x)
         if m and m.group(0) in BRAND_ALLOW: warn(f"Seg{n} 主体定义里有品牌「{m.group(0)}」（project.json brand_allow 已放行；参考图上的标志会照画）")
-        elif m: err(f"Seg{n} 主体定义里有真实品牌/学校名「{m.group(0)}」：会被画成衣服/包装上的商标（Tangled Columbia T 恤）。改人物库/道具库的描述，写颜色和材质")
+        elif m: warn(f"Seg{n} 主体定义里有品牌/学校名「{m.group(0)}」：衣服上的会被画成大标志（Tangled 灰 T 恤 Columbia）；剧情需要就留，不需要就写颜色和材质")
     film = re.search(r"\b(?:Kodak|Fuji(?:film)?)\s+(?:VISION3|Eterna|Portra|\d{3}T)\b[^.,;]*", scan)   # 风格行里的胶片型号是色彩参考，保留（制片人 2026-11-11：怕影响全剧色彩统一）
     for k, sh in enumerate(s['shots'], 1):        # 胶片品牌偶尔被印到道具表面（Tangled 键盘/杯子/糖盒，40 集 6 条）→ 易印字的包装写素面
         for pm in PACK.finditer(sh['en']):
