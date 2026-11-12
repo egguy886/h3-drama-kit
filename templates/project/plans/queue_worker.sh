@@ -14,7 +14,7 @@ while [[ ! -f queue_stop ]]; do
     todo=$(python3 - <<PY
 import json,os
 ep="$ep"; segs=len(json.load(open(f"episodes/{ep}/plan.json"))["segments"]); d=f"episodes/{ep}/07_clips"
-have=[f for f in os.listdir(d) if f.startswith(f"{ep}_seg") and "_r1" in f] if os.path.isdir(d) else []
+have=[f for f in os.listdir(d) if f.startswith(f"{ep}_seg") and f.endswith(".mp4")] if os.path.isdir(d) else []   # 任何 tag 的片都算出过
 done={f.split("_")[1] for f in have}
 try:
     ch=json.load(open(f"episodes/{ep}/chosen.json"))      # 已选定（返工替换过、原 r1 被清理）也算出过
@@ -26,7 +26,12 @@ PY
 )
     if [[ $todo -gt 0 ]]; then
       echo "=== $(date '+%m-%d %H:%M:%S') $ep 出片（还差 $todo 段）"
+      t0=$(date +%s)
       python3 tools/comfy_run.py batch $ep --tag r1
+      if (( $(date +%s) - t0 < 90 )); then   # 一分半内就退出 = 服务器出问题（上传失败、磁盘满、掉线），不要每 2 秒空转，等 10 分钟再试
+        echo "=== $(date '+%m-%d %H:%M:%S') ⚠ $ep 批次秒退（服务器可能磁盘满/掉线），10 分钟后重试" | tee -a autopilot.log
+        sleep 600
+      fi
       work=1; break
     fi
   done
