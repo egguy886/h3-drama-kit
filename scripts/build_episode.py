@@ -180,6 +180,9 @@ for s in segs:
         m = BRAND.search(x)
         if m and m.group(0) in BRAND_ALLOW: warn(f"Seg{n} 主体定义里有品牌「{m.group(0)}」（project.json brand_allow 已放行；参考图上的标志会照画）")
         elif m: warn(f"Seg{n} 主体定义里有品牌/学校名「{m.group(0)}」：衣服上的会被画成大标志（Tangled 灰 T 恤 Columbia）；剧情需要就留，不需要就写颜色和材质")
+    sh0 = s['shots'][0]       # 首镜是 ≥6s 的长台词镜：模型常在里面自己切一刀（V2）。Tangled E36–E54：首镜 6s 以上的台词镜 31% 首次出片就被判 V2，<3s 的 0%
+    if float(sh0['dur']) >= 6 and '{{d:' in sh0['en']:
+        warn(f"Seg{n} 首镜是 {sh0['dur']}s 的长台词镜：容易被模型在里面多切一刀（质检 V2，重出 1–3 次）。先放一个 ≤2.5s 的小镜头（反应/手/环境），再进台词镜")
     film = re.search(r"\b(?:Kodak|Fuji(?:film)?)\s+(?:VISION3|Eterna|Portra|\d{3}T)\b[^.,;]*", scan)   # 风格行里的胶片型号是色彩参考，保留（制片人 2026-11-11：怕影响全剧色彩统一）
     for k, sh in enumerate(s['shots'], 1):        # 胶片品牌偶尔被印到道具表面（Tangled 键盘/杯子/糖盒，40 集 6 条）→ 易印字的包装写素面
         for pm in PACK.finditer(sh['en']):
