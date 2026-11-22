@@ -1,40 +1,41 @@
-"""plan_src 写作助手：只负责固定格式，镜头内容逐条手写（写法见工具包 playbook/04_分镜与提示词.md）。
+"""plan_src 写作助手 v2.0：支持 STAGING_MAP 场次站位与子空间母图映射 + 单镜时长/人影/静止锁前置校验。
 
 每集一个脚本 plans/eNN.py：
     from pw import *
+    STAGING_MAP = [
+        {"subspace": "场01 女囚室", "scene_ref": "N-MINE-CELL", "camera_side": "机位在牢内，画左生锈铁栅紧锁", "blocking": "桑晚仰卧画右湿石壁干草堆"},
+        {"subspace": "场02 牢外走廊", "scene_ref": "N-MINE-CORRIDOR", "camera_side": "机位统一在走廊侧，画右为女囚室铁栅门", "blocking": "矿匪甲与疤脸老四同处画左石桌旁"},
+    ]
     S = []
-    S.append(seg(1, "场01 …", "N-ROOFTOP", "night_neon", "A", "HARD_CUT", ["C01", "C02"], None, summary, sound, cn, [sh(...), ...], blocking=..., seam_motive="gaze"))
-    write("E01", "标题", header=[], notes=[], segs=S)
-然后：python3 plans/e01.py && python3 tools/compose_plan.py E01 && python3 tools/build_episode.py episodes/E01 --voices voices.json
+    S.append(seg(1, "场01 女囚室：…", "N-MINE-CELL", "mine_lamp", "A", "HARD_CUT", ["C01-MINE"], None, summary, sound, cn, [sh(...)], subspace="女囚室"))
+    write("E01", "标题", header=[], notes=[], segs=S, staging_map=STAGING_MAP)
 """
 import json, os, re
 
 
-try:                                   # 画面缺陷规则（自动升级同步，见 playbook/09 G 节）
+try:
     from defect_rules import ERRS, defect_check
 except ImportError:
     ERRS = []
     def defect_check(*a, **k): pass
 
-# 写分镜时就查（比 compose/build 早一轮）：否定词会外溢成画面（踩坑 #3，build 也会 ❌），这里提前给出具体位置。
 NEG_EN = re.compile(r"\b(not|no|never|without|nothing|none|cannot)\b|n't", re.I)
 NEG_CN = ["不要", "禁止", "不得", "不能", "没有", "不会", "不出现", "避免"]
 
 
 def neg_check(sid, summary, shots, cn, mood=None):
     def clean(t): return re.sub(r"\{\{d:[^}]*\}\}|\{SAY:[^}]*\}", "", t)
+    def clean_cn(t): return re.sub(r"\{\{q:[^}]*\}\}|[“\"].*?[”\"]", "", t)
     for where, t in ([("mood", mood[0])] if mood else []) + [("总述 en", summary)] + [(f"镜{k}", x["en"]) for k, x in enumerate(shots, 1)]:
         m = NEG_EN.findall(clean(t))
         if m: print(f"  ⚠ Seg{sid} {where} 英文含否定词 {m}（改肯定式，例：'stays closed' 而不是 'does not open'）")
     for where, t in [("中文说明", " ".join(cn))] + [(f"镜{k}", x["cn"]) for k, x in enumerate(shots, 1)]:
-        m = [w for w in NEG_CN if w in clean(t)]
-        if m: print(f"  ⚠ Seg{sid} {where} 含否定表达 {m}（'能不能' 里藏着 '不能'，改成 '是否'）")
+        m = [w for w in NEG_CN if w in clean_cn(t)]
+        if m: print(f"  ⚠ Seg{sid} {where} 含否定表达 {m}（改肯定式）")
 
 
-# ---- 画面缺陷写作规则（2026-10-29 E15–E18 看片：脸红成皮炎 / 朱砂痣变两颗红点 / 空镜头切走）----
 SKIN_BAD = re.compile(r"\b(?:her|his|Wren's|Lucien's)?\s*(?:cheeks?|face|neck|skin)\b[^.,;]{0,18}\b(?:flush\w*|burn\w*|flam\w*|crimson|red|pink|blush\w*)\b|\b(?:flushed|blushing|rosy)\b[^.,;]{0,12}\b(?:cheeks?|face)\b|\bblush\w*\b", re.I)
 PEOPLE = re.compile(r"\{C\d|Wren|Lucien|Sloane|Beckett|Tyler|Graham|Owen|Evelyn|Diane|Grandma|Hastings|hand|finger|figure|silhouette|man\b|woman|girl|boy|guest|crowd|people|reporter|student", re.I)
-
 
 LOCO = re.compile(r"\b(?:walk|walks|walking|step|steps|stepping|strides?|striding|runs? (?:to|toward|across|down|up|into|out)|running (?:to|toward|across|down|up|into|out)|dash(?:es)?|approach(?:es)?|crosses|moves? toward)\b", re.I)
 THRU = re.compile(r"\b(?:into|out of|through)\b[^.;]{0,40}\b(?:elevator|lift|door|doorway|car|room|corridor|hallway|hall|gate)\b", re.I)
@@ -46,8 +47,18 @@ CAR = re.compile(r"\b(?:rear seat|back seat|backseat|inside the (?:car|Bentley|S
 CARCAM = re.compile(r"camera (?:sits|is placed|is mounted|stays|holds) (?:in|on|at|outside)|from the (?:front|passenger|driver)|through the (?:windshield|window|side window)|from outside the", re.I)
 
 
+def _subspace_key(seg):
+    if seg.get("subspace"):
+        return str(seg["subspace"]).strip()
+    sc = str(seg.get("scene", "")).strip()
+    sc = re.sub(r"^场\s*\d+\s*[.、·\-]?\s*", "", sc)
+    sc = re.split(r"[：:]", sc, 1)[0].strip()
+    sc = re.sub(r"\s*·\s*(?:内|外).*$", "", sc).strip()
+    sc = re.sub(r"^(?:重返|回到)", "", sc).strip()
+    return sc
+
+
 def start_check(ep, segs, starts):
-    """每段的首帧站位（plans/starts.py）：有人出场的段缺了 → 提示；有的话查否定词。"""
     for sg_ in segs:
         st = starts.get(sg_["id"])
         if st:
@@ -57,41 +68,47 @@ def start_check(ep, segs, starts):
             print(f"  ⚠ {ep} Seg{sg_['id']} 缺首帧站位（plans/starts.py）：每段单独生成、看不到上一段，要写 0 秒时谁在哪、什么姿势、手里拿什么、机位在哪")
 
 
+def staging_map_check(ep, segs, staging_map):
+    """v2.0 强制站位与子空间映射检查：核对是否声明 STAGING_MAP，并拦截异地子空间复用同一张固定构图场景母图。"""
+    if not staging_map:
+        print(f"  ⚠ {ep} 未在 plans/{ep.lower()}.py 中传入 staging_map=[...]（建议先声明每场子空间母图、隔断物机位同侧锁与开场站位）")
+    by_ref = {}
+    for sg_ in segs:
+        sref = sg_.get("scene_ref")
+        subk = _subspace_key(sg_)
+        if sref and subk and not sg_.get("same_room_ok"):
+            by_ref.setdefault(sref, {}).setdefault(subk, []).append(f"Seg{sg_['id']}")
+    for sref, mp in by_ref.items():
+        if len(mp) > 1:
+            detail = " / ".join(f"「{k}」({','.join(v)})" for k, v in mp.items())
+            msg = f"{ep} [S00 子空间混图] 不同物理子空间共用了同一场景母图 {sref}：{detail}（请拆独立子空间图，确系重返同屋标 same_room_ok=True）"
+            ERRS.append(msg); print(f"  ❌ {msg}")
+
+
 def look_check(sid, shots, summary="", establish=False):
-    """脸红别写（模型会画成皮炎）；朱砂痣只能写"一颗米粒大"；没有人的镜头会被渲染成空场景。只提示，不拦。"""
     for k, x in enumerate(shots, 1):
         t = re.sub(r"\{\{d:[^}]*\}\}|\{SAY:[^}]*\}", "", x["en"])
         if SKIN_BAD.search(t): print(f"  ⚠ Seg{sid} 镜{k} 脸/颈/皮肤写了发红（{SKIN_BAD.search(t).group(0).strip()}）：模型会画成皮炎红斑，情绪靠眼神和表情写")
-        if re.search(r"\bmole\b", t, re.I) and "rice" not in t.lower(): print(f"  ⚠ Seg{sid} 镜{k} 朱砂痣没写成 one single rice-grain-sized：模型会画成两三颗大红点")
-        if k > 1 and not PEOPLE.search(t) and re.match(r"the camera (?:opens on|cuts to) an? (?:wide|medium|close-up|high-angle|low-angle|still wide)", t, re.I): print(f"  ⚠ Seg{sid} 镜{k} 镜头里没有人/手：容易被渲染成空场景，接缝处会突兀；改成带人的特写")
-        # ---- 空间与衔接规则（2026-10-30 看片：E19/E20/E21/E04/E30/E29；参照 Higgsfield 双人同场指南）----
-        if re.search(r"\bmole\b", t, re.I) and "flat" not in t.lower(): print(f"  ⚠ Seg{sid} 镜{k} 痣没写 flat：模型会画成凸起的血珠/疹子（E29），写 'one single rice-grain-sized flat scarlet mole, flush with the skin'")
-        if k == 1 and not establish and LOCO.search(t): print(f"  ⚠ Seg{sid} 镜1 首镜里人在走动（{LOCO.search(t).group(0)}）：段缝处人物位置会跳（E19 Seg6→7），首镜让人定在上一段结尾的位置，走动放到后面镜头")
-        if THRU.search(t) and not DIRWORD.search(t): print(f"  ⚠ Seg{sid} 镜{k} 进出（{THRU.search(t).group(0)}）没写相对机位的方向：模型会把进/出画反（E21 电梯），写 'away from the camera' / 'toward the camera' / 'seen from behind'")
-        if AGENTLESS.search(t): print(f"  ⚠ Seg{sid} 镜{k} 门/车门自己开着或自己打开（{AGENTLESS.search(t).group(0)}）：观众会当成穿帮（E20），让开门的人入画（司机拉着车门）")
-        if len(MOVES.findall(t)) >= 2: print(f"  ⚠ Seg{sid} 镜{k} 一个镜头里有 {len(MOVES.findall(t))} 个运镜 {MOVES.findall(t)}：一镜只一个运镜（Higgsfield），否则人物易错位")
-        if re.search(r"\bwide\b", t, re.I) and CHAOS.search(t): print(f"  ⚠ Seg{sid} 镜{k} 全景里写了群体剧烈动作（{CHAOS.search(t).group(0)}）：模型会让所有人和家具一起乱动（E30），全景只让一个人动，其他人 'freeze and turn their heads'")
-        if CAR.search(t) and not CARCAM.search(t): print(f"  ⚠ Seg{sid} 镜{k} 车内戏没写机位（{CAR.search(t).group(0)}）：写清 'the camera sits in the front passenger seat looking back' 之类，车内只用固定机位（E04）")
+        if re.search(r"\bmole\b", t, re.I) and "rice" not in t.lower(): print(f"  ⚠ Seg{sid} 镜{k} 朱砂痣没写成 one single rice-grain-sized")
+        if k > 1 and not PEOPLE.search(t) and re.match(r"the camera (?:opens on|cuts to) an? (?:wide|medium|close-up|high-angle|low-angle|still wide)", t, re.I): print(f"  ⚠ Seg{sid} 镜{k} 镜头里没有人/手：容易被渲染成空场景")
+        if re.search(r"\bmole\b", t, re.I) and "flat" not in t.lower(): print(f"  ⚠ Seg{sid} 镜{k} 痣没写 flat")
+        if k == 1 and not establish and LOCO.search(t): print(f"  ⚠ Seg{sid} 镜1 首镜里人在走动（{LOCO.search(t).group(0)}）：首镜让人定在上一段结尾的位置，走动放到后面镜头")
+        if THRU.search(t) and not DIRWORD.search(t): print(f"  ⚠ Seg{sid} 镜{k} 进出（{THRU.search(t).group(0)}）没写相对机位的方向：写 'away from the camera' / 'toward the camera' / 'seen from behind'")
+        if AGENTLESS.search(t): print(f"  ⚠ Seg{sid} 镜{k} 门/车门自己开着或自己打开（{AGENTLESS.search(t).group(0)}）：让开门的人入画")
+        if len(MOVES.findall(t)) >= 2: print(f"  ⚠ Seg{sid} 镜{k} 一个镜头里有 {len(MOVES.findall(t))} 个运镜 {MOVES.findall(t)}：一镜只一个运镜")
+        if re.search(r"\bwide\b", t, re.I) and CHAOS.search(t): print(f"  ⚠ Seg{sid} 镜{k} 全景里写了群体剧烈动作（{CHAOS.search(t).group(0)}）：全景只让一个人动")
+        if CAR.search(t) and not CARCAM.search(t): print(f"  ⚠ Seg{sid} 镜{k} 车内戏没写机位")
 
 
-PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))      # 项目根（plans/ 的上一级）
-
-# 状态锁：剧情里某个资产状态变了（手环被剪、换装、受伤），之后的段只能用新参考，并禁止旧描述出现。
-# 例：{"from_seg": 1, "ref_old": "C01", "ref_new": "C01-NOBAND", "forbid_en": ["band on his left wrist"], "why": "E01 手环被剪"}
+PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE = []
-
 FULL_SPEED = "All action plays at full real-time speed."
-
-# 声音策略（2026-10-28，用户定；学自 HELL GRIND / ONEIRIC / 越线）：生成时只要安静、均匀的房间底噪和人物自身动作声，
-# 不要音乐、人群、雨、壁炉等环境声——每段自带的环境声各不相同，拼接时会在段缝上跳。环境声底、音效、配乐一律后期统一铺。
-# 分镜里写的 sound 保留为 sound_post（后期音效清单），提示词里统一用 QUIET_SOUND，全集一字不差。
 QUIET_SOUND = ("Only a quiet, even room tone and the soft natural sounds of the characters' own visible movements; "
                "each spoken line is clean, dry and close.")
+STILL_CORPSE = "completely frozen motionless, zero breathing or swaying"
 
 
 def sh(dur, sb, en, cn, d=None):
-    """一个镜头：dur 秒；sb 中文分镜名；en 英文镜头文字（不写 [Shot N]/At 00:0x，生成器自动加）；cn 中文对照；d 本镜台词 ID（如 "L3"）。
-    en 里可用：{C01} → <Subject N>；{SAY:C01} → 说话句头（含声线）；{{d:L3}} → 台词原文；{ACT:名字:键} → 表演习惯。"""
     x = {"dur": dur, "sb": sb, "en": en, "cn": cn}
     if d:
         x["d"] = d
@@ -99,26 +116,19 @@ def sh(dur, sb, en, cn, d=None):
 
 
 def lock1(where_en, where_cn, dur=1.0):
-    """静默锁位首秒（多人同场静态戏的第一镜；RH 实测人物一开始不说话时 7/7 得到 1 秒站位全景再硬切）。
-    where_en 写每个人的位置，例如 "Reeve stands over the bound Julian, Cade is crouched at frame-left and Nia stands by the car at the far end"。"""
     return sh(dur, "静默锁位首秒：全景，站位", f"a silent one-second position-lock frame: every mouth stays closed and the room is silent; {where_en}, the camera steady.",
               f"静默锁位的一秒全景：所有人闭嘴、没有声音；{where_cn}，镜头稳住。")
 
 
 def relay(en_short, cn_short):
-    """尾帧接力首镜（只在必须一镜连续时用，并在 seg() 里写 relay_reason）。"""
     return sh(1.0, f"承接尾帧 {cn_short}", f"The shot begins from <Picture 1>, {en_short}.", f"承接首帧，{cn_short}。")
 
 
 def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shots, props=None, wear=None, ff=None, mood=None, extra=None,
-        prop_state=None, transition=None, blocking=None, relay_reason=None, seam_motive=None):
-    """一段 15 秒。
-    nxt：HARD_CUT（默认，同场景也硬切换景别）/ TAIL_RELAY（尾帧接力，必须写 relay_reason）/ "（集尾）"。
-    count：人数句，None 时自动生成 "Exactly N people appear in this video: …"；有群众时手写。
-    cn：(kind, dev, perf, sound, visual) 五项中文说明（只给人看，不上传）。
-    blocking：(en, cn) 站位卡——只写整段都不动的东西和人；会移动的人写进镜头，否则同一个人会出现两次。
-    seam_motive：同场景硬切缝的动机 action / gaze / sound（写在缝前那一段），缺了 shot_lint ❌。"""
+        prop_state=None, transition=None, blocking=None, relay_reason=None, seam_motive=None, subspace=None, same_room_ok=False):
     s = {"light": light, "id": id, "scene": scene, "scene_ref": ref, "chain": chain, "next": nxt, "cast": cast}
+    if subspace: s["subspace"] = subspace
+    if same_room_ok: s["same_room_ok"] = True
     if props: s["props"] = props
     if wear: s["wear"] = wear
     if extra: s["extra"] = extra
@@ -135,12 +145,12 @@ def seg(id, scene, ref, light, chain, nxt, cast, count, summary, sound, cn, shot
     if blocking: s["blocking"] = list(blocking)
     if seam_motive: s["seam_motive"] = seam_motive
     if relay_reason: s["relay_reason"] = relay_reason
-    if transition: s["transition"] = transition          # 换场缝设计：{"type": "cut" / "match_cut" / "foreground_wipe" …, "note": "…"}
+    if transition: s["transition"] = transition
     tot = round(sum(x["dur"] for x in shots), 2)
     assert abs(tot - 15.0) < 0.01, f"Seg{id} 镜头总长 {tot}（必须正好 15.0 秒）"
-    assert len(shots) <= 6 or os.environ.get("ALLOW_7"), f"Seg{id} 有 {len(shots)} 个镜头：每段 ≤6 个（7 个起切点命中率下降）"
+    assert len(shots) <= 6 or os.environ.get("ALLOW_7"), f"Seg{id} 有 {len(shots)} 个镜头：每段 ≤6 个（常规段建议 3–4 个，每镜 2.5–5.0s）"
     t = 0
-    for x in shots:                                   # 台词留余量：最后一句在 13.5 s 前说完（接缝要用最后 1 秒）
+    for x in shots:
         t += x["dur"]
         if x.get("d") and t > 13.51 and not x.get("_ok"):
             print(f"  ⚠ Seg{id} 台词镜头结束在 {t:.1f}s（>13.5）")
@@ -151,7 +161,6 @@ INDOOR_LIGHT = re.compile(r"\b(windows?|lamps?|tungsten|indoors?|interior|firepl
 
 
 def light_check(ep, segs):
-    """室外场景配了室内光（窗光/台灯/橡木）→ 模型会把整段搬进室内（E48 露台实拍成了木墙窗边）。"""
     try:
         lib = os.path.join(PIPE, "library")
         LT = json.load(open(os.path.join(lib, "styles.json"), encoding="utf-8"))
@@ -161,24 +170,25 @@ def light_check(ep, segs):
     for sg_ in segs:
         sc = SC.get(sg_.get("scene_ref") or "", {}); lt = LT.get(sg_.get("light") or "", {}).get("en", "")
         if "外/" in sc.get("name_cn", "") and INDOOR_LIGHT.search(lt):
-            print(f"⚠️ {ep} Seg{sg_['id']}：室外场景 {sg_['scene_ref']} 配了室内光 {sg_['light']}"
-                  f"（{INDOOR_LIGHT.search(lt).group(0)}）——换成室外光预设，否则会被画进室内")
+            print(f"⚠️ {ep} Seg{sg_['id']}：室外场景 {sg_['scene_ref']} 配了室内光 {sg_['light']}——换成室外光预设")
 
 
-def write(ep, title, header, notes, segs, wear=None, per_episode=8):
+def write(ep, title, header, notes, segs, wear=None, per_episode=8, staging_map=None):
+    staging_map_check(ep, segs, staging_map)
     if ERRS and not os.environ.get("LINT_OK"):
-        raise SystemExit(f"{ep}：{len(ERRS)} 处 ❌（规则见 playbook/09 G 节），plan_src 未写出；确认无误可 LINT_OK=1")
+        raise SystemExit(f"{ep}：{len(ERRS)} 处 ❌（规则见 playbook/04 与 defect_rules.py），plan_src 未写出；确认无误可 LINT_OK=1")
     try:
         import importlib, starts as _st; importlib.reload(_st); ST = _st.STARTS.get(ep, {})
     except ImportError:
         ST = {}
     for sg_ in segs:
         if sg_["id"] in ST: sg_["start"] = list(ST[sg_["id"]])
-    if ST or int(ep[1:]) >= 44: start_check(ep, segs, ST)
+    start_check(ep, segs, ST)
     light_check(ep, segs)
     d = {"episode": ep, "title": title, "version": "v1", "state_locks": STATE, "header": header, "notes": notes, "segments": segs}
+    if staging_map: d["staging_map"] = staging_map
     if wear: d["wear"] = wear
-    if len(segs) != per_episode: d["segments_per_episode"] = len(segs)   # 台词过密时放宽段数（先和制片人确认）
+    if len(segs) != per_episode: d["segments_per_episode"] = len(segs)
     os.makedirs(os.path.join(PIPE, "episodes", ep), exist_ok=True)
     p = os.path.join(PIPE, "episodes", ep, "plan_src.json")
     json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

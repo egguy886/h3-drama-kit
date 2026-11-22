@@ -2,8 +2,8 @@
 
 **English** · [简体中文](README.zh-CN.md)
 
-> **A reusable, end-to-end pipeline for AI short dramas on MiniMax H3** — script → assets (look and voice) → shot prompts → compile-time checks → cloud generation on AutoDL → review and retakes → post-production and delivery.
-> Distilled from the production of *Crossing the Line*, a 60-episode AI drama (480 segments, about 120 minutes), and roughly 150 controlled comparison runs on RunningHub's H3. It works both as a Claude Code / Codex skill and as a plain set of Python tools.
+> **A reusable, end-to-end pipeline for AI short dramas on MiniMax H3 (v2.0 Spatial Rigor & Anti-Continuity-Bug Edition)** — script → assets (look and voice) → scene-to-subspace `STAGING_MAP` → shot prompts → compile-time hard gates → cloud generation on AutoDL → review and retakes → post-production and delivery.
+> Distilled from the production of *Crossing the Line* (60 episodes / 480 segments), ~150 controlled A/B runs on RunningHub's H3, and widescreen period-fantasy continuity post-mortems. Works both as a Claude Code / Codex / Gemini skill and as standalone Python tools.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Model](https://img.shields.io/badge/Video-MiniMax%20H3-brightgreen.svg)](#requirements)
@@ -13,12 +13,12 @@
 
 ## Why this exists
 
-On a 60-episode AI drama, generation isn't what eats the budget. **Retakes** are: faces that drift between segments, blocking that doesn't cut together, half a line of dialogue trimmed at a seam, a voice that changes pitch every 15 seconds, fights that play like slow motion, an episode that cuts to black before the last word. *Crossing the Line* hit every one of these, and logged the data.
+On a 60-episode AI drama, generation isn't what eats the budget. **Retakes** are: faces that drift between segments, blocking that doesn't cut together, distinct rooms sharing one fixed-composition plate so characters spawn in place, stray black-clad strangers hallucinated from unmounted "silhouette" prompts, corpses swaying with idle breathing, half a line trimmed at a seam, or fights playing in slow motion.
 
-The kit turns that into three things:
+The kit turns those lessons into three things:
 
 - **Playbooks** — what to do at each stage and what gate it must pass. Every writing rule carries an evidence grade: *production-verified*, *A/B-tested on RunningHub*, *third-party*, or *tested and useless*.
-- **Scripts** — the rules, enforced in code: bad prompts are blocked at compile time, every paid run is pre-checked and priced, dialogue is verified against the locked script after generation, and post-production is one command per episode.
+- **Scripts** — the rules enforced in code: spatial reuse, micro-cuts, unmounted shadows, and missing corpse-motionless locks are blocked at compile time (`❌`), every paid run is pre-checked and priced, dialogue is verified against the locked script, and post-production is one command per episode.
 - **Templates** — a sample project that runs end to end at zero cost, including a local mock of the generation API.
 
 ## The pipeline
@@ -26,10 +26,10 @@ The kit turns that into three things:
 | Stage | What happens | Tools | Gate |
 |---|---|---|---|
 | S0 Setup | aspect ratio, language, segments per episode, delivery spec, content level | `new_project.py` | aspect and content level confirmed |
-| S1 Script audit + dialogue lock | lock dialogue word for word, estimate timing, move device audio to post | `lock_dialogue.py`, `plans/move_post.py` | no open logic conflicts |
-| S2 Assets | break characters / locations / props into IDs, library entries, reference images; cast voices | `asset_gaps.py`, `blocking_diagram.py` | no missing reference images |
-| S3 Shot plan | one `plans/eNN.py` per episode: shots, durations, dialogue placement, blocking, seams | `plans/pw.py` | self-check list |
-| S4 Compile + lint | build bilingual prompts and validate them automatically | `compose_plan.py`, `build_episode.py`, `shot_lint.py`, `axis_lint.py` | zero ❌ |
+| S1 Script audit + dialogue lock | lock dialogue word for word (dual-track `3.8 chars/s` CN / `2.5 words/s` EN), estimate timing, move device audio to post | `lock_dialogue.py`, `plans/move_post.py` | no open logic conflicts |
+| S2 Assets | break characters / dedicated sub-space locations / props into IDs, library entries, reference images; cast voices | `asset_gaps.py`, `blocking_diagram.py` | no missing reference images |
+| S3 Staging map + shot plan | declare `STAGING_MAP` + `plans/starts.py` (sub-space plates & barrier camera-side lock) before writing `plans/eNN.py` | `plans/pw.py`, `plans/defect_rules.py` | self-check list + pre-compile gates |
+| S4 Compile + lint | build bilingual prompts and enforce spatial / shadow / motionless / shot-duration hard gates | `compose_plan.py`, `build_episode.py`, `shot_lint.py`, `axis_lint.py` | zero ❌ |
 | S5 Generate | pre-check → dry run → pilot segments → overnight batch | `h3_run.py`, `h3_batch.py` | **explicit approval before any paid run** |
 | S6 Review + retakes | dialogue check, contact sheets, motion check; fix at the earliest broken layer | `dialogue_check.py`, `episode_sheet.py`, `motion_check.py` | every keep is a human decision |
 | S7 Post | voice consistency, device audio, assembly, room tone, subtitles and name cards, bumpers, loudness, platform edge fix | `voice_fix_ep.py`, `assemble_episode.py`, `subtitle_episode.py`, `finish_episode.py`, `tiktok_edge.py` | watch the finished episode in full |
@@ -66,20 +66,22 @@ ln -s "$(pwd)" ~/.agents/skills/h3-drama-kit     # Codex and other agents
 
 Then ask your agent to "use h3-drama-kit to start a new drama", "write the shot plan for E05" or "generate E05".
 
-## Ten shot-writing rules
+## Twelve shot-writing & spatial rigor rules (v2.0)
 
-From `playbook/04`; the evidence for each is in `playbook/09`.
+From `playbook/04`; compile-time gates are enforced in `plans/pw.py`, `build_episode.py`, and `shot_lint.py`.
 
-1. Each segment is exactly 15.0 s with at most 6 shots; the last line of dialogue ends by 13.5 s; the final 1–1.5 s is a held moment with content. *(production)*
-2. Within a scene, cut hard between segments and open the new segment on a different shot size, with a motivated seam (action, gaze or sound). No last-frame relays; never wide-to-wide. *(production)*
-3. Opening wides must **move** (camera move plus ongoing action). Avoid "static shot"; never write "slow motion". *(production + A/B)*
-4. In fights, one strike per shot, 0.8–1.4 s each. *(A/B + production)*
-5. Positive phrasing only; describe the state already in progress; give every gaze a target; use frame-left / frame-right; sequence multi-person actions. *(production)*
-6. A dialogue shot carries only its line; the action after the line goes in the next shot; other visible faces get "lips at rest". *(production + third-party)*
-7. Blocking cards describe only what stays still for the whole segment; anyone who moves is written into the shots (otherwise they appear twice). *(production)*
-8. Static scenes with three or more people open with a silent, one-second position lock; add a greyscale lettered blocking diagram for exact positions. *(A/B)*
-9. Out-of-focus foreground objects (pipes, mirrors, railings) for depth; eyes lead the head. *(A/B)*
-10. Changeable objects are drawn in their *before-action* state in reference images; every state change gets its own image. *(production + A/B)*
+1. **Write `STAGING_MAP` + `starts.py` before writing shots**: map every physical sub-space to its own dedicated `scene_ref`, lock camera side relative to barriers (bars/doors/desks), and specify 0.0 s postures. *(v2.0)*
+2. **Standard narrative/action shots run `2.5–5.0 s` (`3–4` shots/segment target, max 6)**: non-strike shots under `2.0 s` fail (`❌`); the last spoken line ends by `13.5 s` with a `1–1.5 s` held moment at the tail. *(v2.0)*
+3. **Pure single strikes run `0.8–1.4 s`, one strike per shot**: never mix a strike and looting/prop-drawing in the same shot (`❌` — split prop retrieval into its own `≥2.5 s` shot with visible source container). *(A/B + v2.0)*
+4. **Never share one fixed-composition `scene_ref` across distinct physical sub-spaces** (`❌`; pass `same_room_ok=True` only when returning to the exact same room), and never trap a same-side partner behind foreground bars on a reverse angle (`❌`). *(v2.0)*
+5. **Never write `silhouette / dark figure / two figures` without mounted character plates** (`❌` — H3 invents stray black-clad strangers; use torchlight across stone + rattling lock + off-screen footsteps instead). *(v2.0)*
+6. **Lock corpses, headless bodies, and feigning-sleep characters in-shot with `completely frozen motionless, zero breathing or swaying`** (`❌` — affirmative phrasing compatible with the no-negation gate; live characters still breathe and shift weight). *(v2.0)*
+7. Within a scene, cut hard between segments on a different shot size with a motivated seam (`action`, `gaze`, or `sound`); avoid last-frame relays and never cut wide-to-wide. *(production)*
+8. Opening wides must **move** (camera move + ongoing action); avoid `static shot` and `slow motion`. *(production + A/B)*
+9. Positive phrasing only; describe states in progress; anchor every gaze; use `frame-left` / `frame-right`; sequence multi-person actions. *(production)*
+10. A dialogue shot carries only its line; post-line actions go in the next shot; other visible faces get `lips at rest`. *(production + third-party)*
+11. Blocking cards describe only what stays still for the whole segment; moving characters go in shots; `≥3`-person static scenes open with `lock1()`. *(production + A/B)*
+12. Draw changeable props in their *before-action* state; each state change gets its own reference plate. *(production + A/B)*
 
 **Tested and useless or harmful:** count locks ("exactly one…"), describing a higher voice, pitch-shifting the reference audio, using "silence" to time dialogue starts, dropping the location reference, first-frame locks, height numbers, slimmed-down prompts for dialogue segments, full-line TTS replacement.
 
@@ -87,7 +89,7 @@ From `playbook/04`; the evidence for each is in `playbook/09`.
 
 | Path | Contents |
 |---|---|
-| `SKILL.md` | Skill entry point: pipeline, hard rules, the ten shot rules |
+| `SKILL.md` | Skill entry point: pipeline, v2.0 spatial hard gates, the twelve shot rules |
 | `playbook/00–10` | Overview, script audit, visual assets, voices, **shot plans and prompts (core)**, compile checks, AutoDL generation, review and retakes, post and delivery, evidence table, pitfalls |
 | `scripts/` | All tools (copied into a project's `tools/` on creation) |
 | `templates/project/` | New-project template: config, asset library samples, E01 sample script and shot plan, blocking diagram sample |
@@ -107,7 +109,7 @@ From `playbook/04`; the evidence for each is in `playbook/09`.
 
 ## Related
 
-- [write-screenplay-skill](https://github.com/egguy886/write-screenplay-skill) — the step before this one: adapts novels into micro-drama scripts, builds a production bible, and exports it directly into this kit's asset library format.
+- [write-screenplay-skill](https://github.com/egguy886/write-screenplay-skill) — upstream pre-production director & scriptwriter (`v5.0`): adapts novels into single-subspace scenes with locked opening staging and exports directly into this kit's asset library format.
 
 ## Language
 
