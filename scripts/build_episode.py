@@ -144,7 +144,12 @@ for sref, mp in subspaces_by_ref.items():
 voices = None
 if a.voices:
     v = json.load(open(a.voices, encoding='utf-8'))
-    voices = {x['character'].lower() for x in v.get('voices', [])} | {x['character'].lower() for x in v.get('prompt_voices', [])}
+    voices = (
+        {x['character'].lower() for x in v.get('voices', [])}
+        | {x['character'].lower() for x in v.get('prompt_voices', [])}
+        | {x['name_cn'].lower() for x in v.get('voices', []) if x.get('name_cn')}
+        | {x['name_cn'].lower() for x in v.get('prompt_voices', []) if x.get('name_cn')}
+    )
 
 out_en, out_cn, metas, used_en, used_cn, out_bi = {}, {}, {}, [], [], {}
 locks_path = a.locks or next((c for c in (os.path.join(a.epdir, '..', '..', 'asset_locks.json'),) if os.path.isfile(c)), None)

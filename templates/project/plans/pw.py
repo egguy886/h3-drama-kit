@@ -117,7 +117,7 @@ def sh(dur, sb, en, cn, d=None):
 
 def lock1(where_en, where_cn, dur=1.0):
     return sh(dur, "静默锁位首秒：全景，站位", f"a silent one-second position-lock frame: every mouth stays closed and the room is silent; {where_en}, the camera steady.",
-              f"静默锁位的一秒全景：所有人闭嘴、没有声音；{where_cn}，镜头稳住。")
+              f"静默锁位的一秒全景：所有人双唇紧闭、全场寂静；{where_cn}，镜头稳住。")
 
 
 def relay(en_short, cn_short):

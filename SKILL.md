@@ -1,6 +1,6 @@
 ---
 name: h3-drama-kit
-description: AI 短剧全流程工具包 v2.0（MiniMax H3 + AutoDL 云端出片 / 自有 ComfyUI 服务器出片）：剧本审计与中英双语台词锁定 -> 场次站位与子空间母图映射（STAGING_MAP） -> 拆视觉/声线资产 -> 写分镜与 H3 提示词（常规镜 2.5–5.0s 硬门禁） -> 编译硬拦截（禁未挂母图写黑影/禁异地子空间共用场景图/禁尸体与装昏漏写静止锁/禁隔断物内外反切） -> 批量出片 -> 看片返工 -> 声线统一/拼接/字幕/响度交付。新开一部剧、写某一集分镜或提示词、拆资产、锁导演视觉风格（style_lock.json）、出片、审片、后期时使用。
+description: AI 短剧全流程工具包 v2.0（MiniMax H3 + 三大出片后端：AutoDL 云端 / 自有 ComfyUI 服务器 / Colab G4 NVMe 零值守直拉）：剧本审计与中英双语台词锁定 -> 场次站位与子空间母图映射（STAGING_MAP） -> 拆视觉/声线资产 -> 写分镜与 H3 提示词（常规镜 2.5–5.0s 硬门禁） -> 编译硬拦截（禁未挂母图写黑影/禁异地子空间共用场景图/禁尸体与装昏漏写静止锁/禁隔断物内外反切） -> 批量出片 -> 看片返工 -> 声线统一/拼接/字幕/响度交付。新开一部剧、写某一集分镜或提示词、拆资产、锁导演视觉风格（style_lock.json）、出片、审片、后期时使用。
 ---
 # H3 短剧工具包 v2.0（h3-drama-kit · 空间站位与防穿帮硬门禁版）
 
@@ -26,6 +26,7 @@ cd <项目目录> && python3 tools/kit_doctor.py
 | 4 编译硬拦截自检 | `python3 plans/e05.py && python3 tools/compose_plan.py E05 && python3 tools/build_episode.py episodes/E05 --voices voices.json`；`python3 tools/axis_lint.py E05` | **❌ 零容忍拦截**（含空间/人影/静止锁/碎切门禁） | playbook/05 |
 | 5 出片 | `h3_run.py check` -> `run --dry-run` -> `h3_batch.py plan` -> **问制片人** -> `h3_batch.py run E05-E08 --window 00:00-08:00` | 付费前明确同意 | playbook/06 |
 | 5′ 自有 ComfyUI | `preflight.py E05-E08` -> `comfy_run.py batch E05-E08 --tag r1` -> `auto_post.py E05-E08` | 服务器常开才走这条 | **playbook/11** |
+| 5″ Colab G4 NVMe 直拉出片 | `colab_g4_run.py E05 --all --dry-run` -> **问制片人** -> `colab_g4_run.py E05 --all --stitch`（新建 G4 用 `aria2c -x 16` 从 HuggingFace 约 2 分钟直拉 42GB 权重至本地 NVMe，**严禁 `colab drivemount`**；后台守护采样 + ≤7 分钟保活心跳防空闲回收 + 每段完立即增量回传 + 跑完自动 `colab stop`） | 零人工点击、跑完必验证 `No active sessions` | **playbook/17** |
 | 6 看片返工 | `h3_run.py accept/reject`、`dialogue_check.py`、`episode_sheet.py`、`motion_check.py` | 每段保留由人确认 | playbook/07 |
 | 7 后期 | `voice_fix_ep.py` -> `post_voice.py` -> `assemble_episode.py` -> `finish_episode.py` | 成片完整看一遍 | playbook/08 |
 | 7′ 高潮点声音 | `python3 tools/post_additives.py 成片.mp4 out.mp4 --beat 上升始:上升止:落地:冻结 --report` | 手机外放能听到落地；谢帕德 -14 dB | playbook/16 |

@@ -30,7 +30,7 @@ The kit turns those lessons into three things:
 | S2 Assets | break characters / dedicated sub-space locations / props into IDs, library entries, reference images; cast voices | `asset_gaps.py`, `blocking_diagram.py` | no missing reference images |
 | S3 Staging map + shot plan | declare `STAGING_MAP` + `plans/starts.py` (sub-space plates & barrier camera-side lock) before writing `plans/eNN.py` | `plans/pw.py`, `plans/defect_rules.py` | self-check list + pre-compile gates |
 | S4 Compile + lint | build bilingual prompts and enforce spatial / shadow / motionless / shot-duration hard gates | `compose_plan.py`, `build_episode.py`, `shot_lint.py`, `axis_lint.py` | zero ❌ |
-| S5 Generate | pre-check → dry run → pilot segments → overnight batch | `h3_run.py`, `h3_batch.py` | **explicit approval before any paid run** |
+| S5 Generate | three backends: AutoDL cloud (`h3_run.py` / `h3_batch.py`), self-hosted ComfyUI (`comfy_run.py`), or **zero-touch Colab G4 local NVMe 16-thread direct HuggingFace pull (`colab_g4_run.py`, no `drivemount` OAuth)** | `h3_run.py`, `comfy_run.py`, `colab_g4_run.py` | **explicit approval before paid run + auto-stop** |
 | S6 Review + retakes | dialogue check, contact sheets, motion check; fix at the earliest broken layer | `dialogue_check.py`, `episode_sheet.py`, `motion_check.py` | every keep is a human decision |
 | S7 Post | voice consistency, device audio, assembly, room tone, subtitles and name cards, bumpers, loudness, platform edge fix | `voice_fix_ep.py`, `assemble_episode.py`, `subtitle_episode.py`, `finish_episode.py`, `tiktok_edge.py` | watch the finished episode in full |
 

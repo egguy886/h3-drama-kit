@@ -29,7 +29,7 @@
 | S2 资产 | 角色/场景（按物理子空间拆独立母图）/道具拆 ID、写库条目、出参考图；声线定档 | `asset_gaps.py`、`blocking_diagram.py` | 缺图清零 |
 | S3 站位映射 + 分镜 | 先写 `STAGING_MAP` 与 `plans/starts.py` 锁子空间母图与隔断机位，再写 `plans/eNN.py` | `plans/pw.py`、`plans/defect_rules.py` | 自查清单 + 前置硬拦截 |
 | S4 编译自检 | 生成中英对照提示词并执行空间/人影/静止锁/碎切硬门禁 | `compose_plan.py`、`build_episode.py`、`shot_lint.py`、`axis_lint.py` | ❌ 清零 |
-| S5 出片 | 预检 → dry-run → 先锋段 → 夜间批量 | `h3_run.py`、`h3_batch.py` | **付费前明确同意** |
+| S5 出片 | 三选一后端：AutoDL 云端（`h3_run.py` / `h3_batch.py`）、常开自有 ComfyUI（`comfy_run.py`）、**Colab G4 本地 NVMe 16 线程直拉零值守出片（`colab_g4_run.py`，免 Drive 授权）** | `h3_run.py`、`comfy_run.py`、`colab_g4_run.py` | **付费前明确同意 + 跑完自动关机** |
 | S6 看片返工 | 台词核对、对照图、动作量检测；按层回退修 | `dialogue_check.py`、`episode_sheet.py`、`motion_check.py` | 每段保留由人确认 |
 | S7 后期 | 声线统一、设备声、拼接、环境声底、字幕铭牌、片头尾、响度、平台黑边修复 | `voice_fix_ep.py`、`assemble_episode.py`、`subtitle_episode.py`、`finish_episode.py`、`tiktok_edge.py` | 成片完整看一遍 |
 
