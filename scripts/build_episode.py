@@ -191,9 +191,7 @@ for s in segs:
         elif ms_u and n_char_subj == 1 and re.search(r'\b(?:stranger|intruder|black-clad|hooded)\b', ms_u.group(0), re.I):
             gate(f"Seg{n} 镜头{k} [未挂母图禁写人影] 写了未挂载的陌生黑衣人影「{ms_u.group(0)}」")
 
-        # v2.0 硬拦截 ③：尸体/无头躯干/装昏必须写死 completely frozen motionless, zero breathing or swaying
-        if (_CORPSE_EN_RX.search(sh_en_nodlg) or _CORPSE_CN_RX.search(sh_cn_nodlg)) and not _STILL_LOCK_RX.search(sh_en_nodlg):
-            gate(f"Seg{n} 镜头{k} [静止死锁缺失] 镜头含尸体/无头躯干/装昏状态，英文必须显式写死 'completely frozen motionless, zero breathing or swaying' 防止模型自动加呼吸晃动")
+        # v3.1 经 AB2 同种子实测验证：废除强制写死 'completely frozen motionless' 的拦截（该词会拖慢运镜行程），改为自然昏沉垂卧描述即可
 
         body.append(f"[Shot {k}] " + (sh['en'] if k == 1 else f"At {ts(t)}, {sh['en']}"))
         wl.append(f"镜头 {k:02d}。{t:.1f}–{t + sh['dur']:.1f}秒。{sh['wenwu']}")

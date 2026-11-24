@@ -345,9 +345,7 @@ def staging_and_rigor_lint(ep, plan, warns, errs, allow_legacy=False):
             if ms_u and (n_char_subj == 0 or (n_char_subj == 1 and re.search(r"\b(?:stranger|intruder|black-clad|hooded)\b", ms_u.group(0), re.I))):
                 sink.append(f"{where}：[未挂母图禁写人影] 写了未挂载的陌生人影「{ms_u.group(0)}」")
 
-            # 4) 尸体/无头躯干/装昏静止死锁
-            if (_CORPSE_EN_RX.search(en_nodlg) or _CORPSE_CN_RX.search(cn_nodlg)) and not _STILL_LOCK_RX.search(en_nodlg):
-                sink.append(f"{where}：[静止死锁缺失] 含尸体/无头躯干/装昏状态，必须在镜头英文内写死 'completely frozen motionless, zero breathing or swaying'")
+            # 4) v3.1 经 AB2 同种子实测废除强制 'completely frozen motionless' 死锁（该词砍运镜行程），改为自然昏沉描写 + 显式运镜原语
 
             # 4b) v2.1 S04: 单镜跨拓扑形态硬渐变拦截（悬空闭网兜→掉落散开露活人）
             if _SUSPENDED_WRAP_RX.search(en_nodlg) and _OPEN_REVEAL_BODY_RX.search(en_nodlg):

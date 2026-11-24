@@ -184,7 +184,7 @@ def build_u24_graph(job: dict, upscaler_name: str, cinema_lora: str, aspect: str
         "width": low_w, "height": low_h, "length": frames,
         "task_type": "Ref2VA", "audio_mode": "native", "audio_denoise_strength": 1.0,
         "add_source_as_reference": False, "prompt_primary_audio_ordinal": 0,
-        "strict_prompt_tags": False, "ref_image_size": "match",
+        "strict_prompt_tags": False, "ref_image_size": "max",
         "reference_video_policy": "official_2_to_15s", "allow_above_reference_area": False,
         "clip": ["3", 0], "video_vae": ["1", 0], "audio_vae": ["2", 0],
     }
