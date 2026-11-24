@@ -50,6 +50,8 @@ CN_NUM = "零一二三四五六七八九十"
 plan = {"episode": src["episode"], "title": src["title"], "version": src.get("version", "v1"),
         "segment_sec": 15.0, "segments_per_episode": src.get("segments_per_episode", len(src.get("segments", [])) or 8),
         "aspect": ASPECT,
+        "compact_prompt": src.get("compact_prompt", True),
+        "audio_mode": src.get("audio_mode", "native-cinema"),
         "styles": {k: v["en"] for k, v in styles.items()},
         "storyboard_header": src.get("header", []), "review_notes": src.get("notes", []),
         "dialogue_headroom_min": src.get("dialogue_headroom_min", 0.3),
@@ -93,7 +95,10 @@ for s in src["segments"]:
             extra = s.get("extra", {}).get(aid)
             line = f"<Subject {k}> is {en_name}, {it['base_en'].replace('{P}', P)}" + (f"; {extra[0]}" if extra else "") + "."
         elif kind == "scene":
-            line = f"<Subject {k}> is {it['en'].replace('{P}', P)}. {it['layout_en']} {P} supplies only the geography, furniture, materials and light of this place; frame every shot from fresh camera positions instead of copying the reference composition."
+            if plan["compact_prompt"]:
+                line = f"<Subject {k}> is {it['en'].replace('{P}', P)}. {P} supplies the environment materials and lighting only; frame every shot freely from fresh camera positions."
+            else:
+                line = f"<Subject {k}> is {it['en'].replace('{P}', P)}. {it['layout_en']} {P} supplies only the geography, furniture, materials and light of this place; frame every shot from fresh camera positions instead of copying the reference composition."
         else:
             state = s.get("prop_state", {}).get(aid)
             line = f"<Subject {k}> is {it['en'].replace('{P}', P)}" + (f"; {state[0]}" if state else "") + "."
@@ -212,15 +217,26 @@ for s in src["segments"]:
     if people_cn:
         parts.append(f"画面里只有这{CN_NUM[len(people_cn)] if len(people_cn) <= 10 else len(people_cn)}个人" + ("，每人只说引号里的台词。" if speakers else "。") if len(people_cn) > 1 else f"画面里只有 {people_cn[0]} 一个人。")
     parts.append("最终发展线：" + cn.get("dev", ""))
-    wenwu = {"open": "".join(parts), "perf": cn.get("perf", ""), "sound": cn.get("sound", "") + "本段只有环境声与动作声，配乐留给后期。",
+    music_en = s.get("music") or ("N/A" if plan["audio_mode"] == "dry-stem" else "Subtle atmospheric film score matching the scene's dramatic tension and pacing.")
+    music_cn = s.get("music_cn") or ("本段为干声模式，配乐留给后期。" if plan["audio_mode"] == "dry-stem" else "原生音画联合生成环境声底与电影配乐。")
+    wenwu = {"open": "".join(parts), "perf": cn.get("perf", ""), "sound": cn.get("sound", "") + music_cn,
              "visual": cn.get("visual", "")}
+
+    extra_spatial = []
+    if not plan["compact_prompt"]:
+        if s.get("blocking"):
+            extra_spatial.append(f"Blocking, fixed in every shot: {expand(s['blocking'][0])}")
+        if s.get("start"):
+            extra_spatial.append(f"First frame{'' if (s.get('transition') or {}).get('type') in ('establish', 'time_cut') else ', continuous with the previous moment'} (positions and postures only; the framing of every shot follows its own shot description): {expand(s['start'][0])}")
+    elif s.get("local_lock"):
+        # v3.0 CINEDANCE D2 原则：仅在确有风险的局部段落注入简短一行空间微锁，绝不塞 600 词全局八股
+        extra_spatial.append(expand(s["local_lock"]))
 
     plan["segments"].append({
         "id": n, "scene": s["scene"], "scene_ref": s.get("scene_ref"), "light": s["light"], "connection_to_next": s["next"], "chain": s["chain"],
         "en": {"tag": tag, "first_frame": s.get("ff_en") if relay else None, "count": count,
-               "subjects": subj_lines + ([f"Blocking, fixed in every shot: {expand(s['blocking'][0])}"] if s.get("blocking") else [])
-                           + ([f"First frame{'' if (s.get('transition') or {}).get('type') in ('establish', 'time_cut') else ', continuous with the previous moment'} (positions and postures only; the framing of every shot follows its own shot description): {expand(s['start'][0])}"] if s.get("start") else []), "audios": audios,
-               "summary": expand(s["summary"]), "retention": ret, "soundscape": s["sound"]},
+               "subjects": subj_lines + extra_spatial, "audios": audios,
+               "summary": expand(s["summary"]), "retention": ret, "soundscape": s["sound"], "music": music_en},
         "refs": refs, "wenwu": wenwu, "shots": shots,
         **({"subspace": s["subspace"]} if s.get("subspace") else {}),
         **({"same_room_ok": s["same_room_ok"]} if s.get("same_room_ok") else {}),

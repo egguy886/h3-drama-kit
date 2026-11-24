@@ -67,13 +67,14 @@ _SPEECH_RX = re.compile(rf"\b(?:{_SPEECH_V})\b[^;.]*", re.I)
 
 
 def scrub_speech(t):
-    return re.sub(r"\s+", " ", _SPEECH_RX.sub("speaks", t)).replace("speaks speaks", "speaks")
+    # v3.0 解绑：保留 roars / whispers / hisses / snaps 等富有戏剧张力的表演动词，不再洗成平淡的 speaks
+    return re.sub(r"\s+", " ", t).strip()
 
 
 def pace(t):
+    # v3.0 解绑：保留中文戏剧气口与窒息停顿（……），仅规整英文多点省略号
     if re.search(r'[\u4e00-\u9fff]', t):
-        t = re.sub(r"\s*(?:\.{3,}|…+)\s*$", "。", t.strip())
-        return re.sub(r"\s*(?:\.{3,}|…+)\s*", "，", t).replace("，？", "？").replace("，！", "！").replace("，，", "，")
+        return t.strip()
     t = re.sub(r"\s*(?:\.{3,}|…)\s*$", ".", t.strip())
     return re.sub(r"\s*(?:\.{3,}|…)\s*", ", ", t).replace(", ?", "?").replace(", !", "!").replace(",,", ",")
 
@@ -109,7 +110,7 @@ def bilingual(s, e, w, sd, shot_pairs, intro):
         md += [f"### 镜头 {k} · {t0:.1f}–{t1:.1f}s" + (f"｜对白 {sh['dialogue']}" if sh['dialogue'] else ''), '',
                cnb(r_cn(sh['wenwu'])), '', blk('detailed_description', r_en(en_line)), '']
     md += ['## 表演与视觉母题（仅中文）', '', cnb('表演肌理：' + r_cn(w['perf']) + '\n视觉母题：' + w['visual']), '',
-           '## 声音', '', cnb(w['sound']), '', blk('overall_soundscape', e['soundscape']), '', blk('non_diegetic_music', 'N/A'), '']
+           '## 声音', '', cnb(w['sound']), '', blk('overall_soundscape', e['soundscape']), '', blk('non_diegetic_music', e.get('music') or 'N/A'), '']
     return '\n'.join(md)
 
 ID_RE = re.compile(r'\b[CSP]\d{2}\b|\bP\d{2}-[A-Z]+\b')
@@ -202,7 +203,7 @@ for s in segs:
     sd = ([e['first_frame']] if e['first_frame'] else []) + e['subjects'] + e['audios']
     en = '\n\n'.join(['subject_definitions:\n' + '\n'.join(sd), f"summary:\n{e['tag']} {scrub_speech(e['summary'])}",
                       'retention_analysis:\n' + '\n'.join(e['retention']), 'detailed_description:\n' + r_en('\n'.join(body)),
-                      'overall_soundscape:\n' + e['soundscape'], 'non_diegetic_music:\nN/A']) + '\n'
+                      'overall_soundscape:\n' + e['soundscape'], 'non_diegetic_music:\n' + (e.get('music') or 'N/A')]) + '\n'
     w = s['wenwu']
     cn = (r_cn(w['open']) + "\n\n时间线：\n" + r_cn('\n'.join(wl)) + "\n\n表演肌理：" + r_cn(w['perf']) +
           "\n\n声音脉络：" + w['sound'] + "\n\n视觉母题：" + w['visual'] + "\n")

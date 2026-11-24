@@ -1,64 +1,87 @@
 ---
 name: h3-drama-kit
-description: AI 短剧全流程工具包 v2.0（MiniMax H3 + 三大出片后端：AutoDL 云端 / 自有 ComfyUI 服务器 / Colab G4 NVMe 零值守直拉）：剧本审计与中英双语台词锁定 -> 场次站位与子空间母图映射（STAGING_MAP） -> 拆视觉/声线资产 -> 写分镜与 H3 提示词（常规镜 2.5–5.0s 硬门禁） -> 编译硬拦截（禁未挂母图写黑影/禁异地子空间共用场景图/禁尸体与装昏漏写静止锁/禁隔断物内外反切） -> 批量出片 -> 看片返工 -> 声线统一/拼接/字幕/响度交付。新开一部剧、写某一集分镜或提示词、拆资产、锁导演视觉风格（style_lock.json）、出片、审片、后期时使用。
+description: |-
+  AI 电影级短剧/中长剧全流程引擎 v3.0（U24-文武双修T8 首要底座 · 纯导演官方 MiniMax H3 原生声画 · Cinema Studio 4.0 / Hell Grind 光学运镜 · 仅留 3 项轻量硬护栏）：
+  全面解绑旧版厚规则紧箍咒（废除 600 词重复布局八股、废除强制静音室音、解禁 orbit 环绕与对白动作合流、取消闭唇木偶锁），以“厚资产、薄规则、强导演”驱动 MiniMax H3 音画联合扩散满血发挥。
+  全画幅/全题材/全文化自由定制（横屏 16:9 & 2.39:1 / 竖屏 9:16、中式/美式/日韩、短剧/中长剧无 8 段上限）；默认锁定 API-U24-文武双修T8版 为自建原生 ComfyUI 与 Colab G4 首要生产工作流。
 ---
-# H3 短剧工具包 v2.0（h3-drama-kit · 空间站位与防穿帮硬门禁版）
 
-工具包目录：`playbook/` 写法与流程、`scripts/` 全部工具、`templates/` 新项目模板与提示词模板。
-**所有对用户的说明用中文。** 证据标记：【量产】AutoDL/ComfyUI 正式生产验证；【RH】RunningHub 对照验证；详见 `playbook/09_规则证据表.md`。
+# H3 导演级影视工具包 v3.0（Director-First · U24-T8 Primary · Native A/V Engine）
 
-## 开新项目
+> **v3.0 底层信条（经实拍对照实验验证）**：
+> 旧版 40+ 条防御式微规则会制造“全景引力”“跨模态声画打架”与“合规税”，把强底座（`U24-T8`）和强编导模型捆成木偶。
+> **v3.0 彻底瘦身为“厚资产 + 强导演 + 3 项轻量硬护栏”**：把编剧、运镜、表演与声场创作权 100% 归还给顶级导演思维，用脚本只守真正能省钱防翻车的 3 条底线。
 
-```bash
-python3 <工具包>/scripts/new_project.py <项目目录> --title-en "Night Shift" --title-cn "夜班" --aspect 9:16 --genre-cn "写实电影感出海都市悬疑短剧，英文对白"
-cd <项目目录> && python3 tools/kit_doctor.py
-```
+---
 
-先问清（S0）：画幅（9:16 / 16:9 / 1:1）、视觉介质风格（真人实拍院线感 vs 国风 2D 厚涂动漫 vs 3D 电影级国漫渲染）、主色调与导演影调宪法（`library/style_lock.json`）、语言（`zh` 中文按 3.8 字/秒、`en` 英文按 2.5 词/秒）、每集段数、发布平台（`delivery.json` 从第 1 集统一）、内容尺度、配乐与出片方案（AutoDL 云端 vs 自有 ComfyUI 服务器）。写进 `project.json` / `decisions.md` / `library/style_lock.json`。
+## 一、 首要出片引擎锁定：`API-U24-文武双修T8版`
 
-## 一集的流程（在项目根目录）
+经全集 A（Pika H3）/ B（Cobijada + 3 LoRA）/ C（`API-U24-文武双修T8版`）同种子实拍评测，**正式将 `API-U24-文武双修T8版` 锁定为自建 ComfyUI 与云端出片的首要默认引擎**：
+- **核心架构**：`minimax_h3_hybrid_fl2va_ref2va_b25-49-int8` 底模 + 两阶段采样（`PASS 1` 4 步 `0.4MP` 构图运动 → `1.5×` 3D 潜空间放大 → `PASS 2` 5 步 `1312×736` 16:9 或 `736×1312` 9:16 电影精修）+ 双分支 6 LoRA（`FL2V Turbo v1.2` + `H3_Combat_V2` + `Dasiwa` + `10ErosMax_T8` + `Motion_Repair` + `MinimaxH3真实电影质感V0.1`）。
+- **开箱即用三件套**：
+  - 一键部署自建原生 ComfyUI（Linux GPU / AutoDL / RunPod，建议显存 ≥32GB）：`bash scripts/deploy_self_hosted_u24.sh`
+  - 自建原生 ComfyUI 直连客户端（支持 `episodes/<EP>` 或纯导演 `jobs.json`，自动去重上传图/音并回传成片）：`python3 scripts/u24_self_hosted_run.py run-jobs <jobs.json> --out <out_dir> --url http://<IP>:8188`
+  - 完整 API 工作流模板：`templates/workflows/u24_wenwu_t8_primary.api.json`
 
-| 步 | 命令 | 门禁 | 写法 |
-|---|---|---|---|
-| 1 剧本审计 + 台词锁定 | `python3 tools/lock_dialogue.py scripts_fixed/E05_x.md episodes/E05/02_dialogue_lock.json`（兼容中英文说话人与 `**开场站位**`）；设备声/V.O. `plans/post_moves.json` -> `python3 plans/move_post.py` | 单一子空间分场、无逻辑冲突；台词逐字 | playbook/01 |
-| 2 站位与子空间映射 + 资产锁 | **写分镜前先定 `STAGING_MAP`**：每个物理子空间（如女牢/走廊/隔壁牢/赌桌）必须对应独立 `scene_ref` 母图，严禁异地共用同一张固定构图图；锁死 `library/style_lock.json`；`python3 tools/asset_gaps.py E05` | 缺图清零、子空间零混图 | playbook/02、04、14 |
-| 3 分镜与站位写入 | 在 `plans/starts.py` 写首帧站位；在 `plans/e05.py` 先声明 `STAGING_MAP` 再写 `seg / sh / lock1`（常规镜 **2.5–5.0s**，每段推荐 **3–4 镜**） | 自查清单 + `defect_rules` | **playbook/04（核心）** |
-| 4 编译硬拦截自检 | `python3 plans/e05.py && python3 tools/compose_plan.py E05 && python3 tools/build_episode.py episodes/E05 --voices voices.json`；`python3 tools/axis_lint.py E05` | **❌ 零容忍拦截**（含空间/人影/静止锁/碎切门禁） | playbook/05 |
-| 5 出片 | `h3_run.py check` -> `run --dry-run` -> `h3_batch.py plan` -> **问制片人** -> `h3_batch.py run E05-E08 --window 00:00-08:00` | 付费前明确同意 | playbook/06 |
-| 5′ 自有 ComfyUI | `preflight.py E05-E08` -> `comfy_run.py batch E05-E08 --tag r1` -> `auto_post.py E05-E08` | 服务器常开才走这条 | **playbook/11** |
-| 5″ Colab G4 NVMe 直拉出片 | `colab_g4_run.py E05 --all --dry-run` -> **问制片人** -> `colab_g4_run.py E05 --all --stitch`（新建 G4 用 `aria2c -x 16` 从 HuggingFace 约 2 分钟直拉 42GB 权重至本地 NVMe，**严禁 `colab drivemount`**；后台守护采样 + ≤7 分钟保活心跳防空闲回收 + 每段完立即增量回传 + 跑完自动 `colab stop`） | 零人工点击、跑完必验证 `No active sessions` | **playbook/17** |
-| 6 看片返工 | `h3_run.py accept/reject`、`dialogue_check.py`、`episode_sheet.py`、`motion_check.py` | 每段保留由人确认 | playbook/07 |
-| 7 后期 | `voice_fix_ep.py` -> `post_voice.py` -> `assemble_episode.py` -> `finish_episode.py` | 成片完整看一遍 | playbook/08 |
-| 7′ 高潮点声音 | `python3 tools/post_additives.py 成片.mp4 out.mp4 --beat 上升始:上升止:落地:冻结 --report` | 手机外放能听到落地；谢帕德 -14 dB | playbook/16 |
+---
 
-## 硬规则（含 v2.0 四大防穿帮编译铁律 ★）
+## 二、 全适配立项参数（S0 · 由用户自由定调）
 
-1. **付费出片前**报 任务数 x 分辨率 x 时长 x 预估费用（768p 空闲 ¥0.45/段），等明确同意；网络异常不自动重提（先 `resume`）。
-2. **令牌只在项目 .env（AUTODL_TOKEN）**，绝不读出、打印、写进文件或发给别人。
-3. 台词逐字不改；中文潜台词绝不进提示词；设备里的声音与内心独白 V.O. 不进 H3，后期配（且画面内必须有独立视觉因果，做到**静音也能看懂**）。
-4. 改分镜只改 `plans/eNN.py` 再 compose -> build；不手改 `05_prompts/`。
-5. 参考图优先于文字：冲突就改文字或补状态图（`asset_locks.json` 锁住）。
-6. **【编译硬拦截 ① · 未挂母图禁写人影】**：当前段未挂载对应角色母图（或 `noref` 角色条目）时，英文提示词**严禁出现 `silhouette / dark figure / shadowy figure / two figures`** 等额外人影词（否则 H3 会凭空捏造黑衣人）；走廊有人靠近但未挂图时，一律改写为纯暖黄灯光扫过岩壁或铁锁轻晃。（`build_episode.py` & `shot_lint.py` ❌）
-7. **【编译硬拦截 ② · 异地子空间禁共用同一固定构图场景图】**：写 `plans/eNN.py` 前强制填写 `STAGING_MAP`；同一集内不同物理子空间（如`寒山矿牢` vs `牢外走廊` vs `隔壁木牢` vs `矿洞赌桌`）**严禁复用同一个 `scene_ref`**（否则切段像原地刷出人物），缺子空间图必须先补图；确系稍后重返同一间屋子才可显式标 `same_room_ok=True`。（`build_episode.py` & `shot_lint.py` ❌）
-8. **【编译硬拦截 ③ · 尸体 / 无头躯干 / 装昏不动强制写死静止锁】**：凡镜头出现死尸、无头躯干、昏迷或装睡不动，当前镜头的英文描述**必须显式写死 `completely frozen motionless, zero breathing or swaying`**（肯定式写法，不触发否定词拦截，且自动豁免活人 `FROZEN` 告警），漏写编译直接报错。（`build_episode.py` & `shot_lint.py` ❌）
-9. **【编译硬拦截 ④ · 隔断物同侧锁与单镜时长硬门禁】**：
-   - 两人同处铁栅/门框外侧交谈时，严禁一镜隔着前景铁栅拍 A、下一镜拍 B 抓铁栅（会把同伙视觉关进牢内），必须统一锁死在走廊同侧取景。（`shot_lint.py` ❌）
-   - **收紧单镜时长**：除 `lock1` 首秒锁位帧与纯单次打击镜（`0.8–1.6s`，严禁混入摸尸/掏道具过程）外，**常规叙事与连贯动作镜强制 `2.5–5.0s`**（`<2.0s` 编译 ❌ 拦截，`2.0–2.4s` ⚠ 提示），单段 15 秒以 **3–4 镜**（至多 5 镜）为主，必须演透“起手→过程→结果”与道具物理来源。
-10. **生成时不要环境声/音乐**：提示词声音行统一用干净室内底噪与可见动作声，连续环境底、音效、配乐一律后期统一铺。
+新项目启动前只确认 5 个制片开关，**绝不强套旧默认**：
+1. **画幅**：`16:9`（`1312×736`）/ `2.39:1` / `9:16`（`736×1312`）；
+2. **语言与文化语境**：中文（按 `3.8 字/秒`）/ 英文美式（按 `2.5 词/秒`）；
+3. **体量与节奏**：竖屏短剧（参考 8–10 段，按戏核伸缩）/ 横屏短剧（**无 8 段上限**）/ 中长剧分幕；
+4. **声音模式（`audio_mode`）**：
+   - **`native-cinema`（默认推荐）**：全面释放 MiniMax H3 原生音画联合扩散——写满持续环境声底（Audio Bed）、逐切镜动作材质音效与电影配乐情绪弧线；
+   - **`dry-stem`（仅当用户明确要求后期换配音/独立混音时启用）**：干声对白 + 轻环境底噪 + `non_diegetic_music: N/A`。
+5. **视觉介质与导演参考系**：真人电影写实 / 国风 2D 厚涂 / 3D 电影级国漫 + 明确摄影指导参考系（如 *Deakins / Lubezki / 徐克暗黑光影*），写入 `library/style_lock.json`。
 
-## 写镜头的十条（详见 playbook/04 与 playbook/15）
+---
 
-1. 每段正好 15.0 秒；**常规段 3–4 镜（至多 5 镜），常规单镜 `2.5–5.0s`**；最后一句台词 ≤13.5 秒；最后 1–1.5 秒是有内容的停留。【量产 + v2.0】
-2. **先写 `STAGING_MAP` 与 `starts.py` 首帧站位**，核对子空间独立母图与隔断物（铁栅/门框）机位同侧关系；跨子空间必给物理动线过渡镜。【v2.0】
-3. 同场景跨段硬切、新段换景别，写 `seam_motive`（action/gaze/sound）；不尾帧接力；禁全景接全景。【量产】
-4. 开场全景要**动**（运镜 + 持续动作）；少写 "holds a static shot"，给镜头有动机的运镜；绝不写 slow motion。【量产 + RH】
-5. 打斗每个纯打击单独一镜 0.8–1.4 秒、一镜一动作；**搜身/拔刀/取物等过程动作必须独立给足 ≥2.5 秒并先交代道具出处**。【RH + v2.0】
-6. 肯定式；状态先行；视线写到具体落点；左右写 frame-left/right；多人动作写先后。【量产】
-7. 对白镜只写台词，说完的动作放下一镜；画面里别人的正脸写 lips at rest。【量产 + 第三方】
-8. 活人不写 frozen/motionless（会拖慢运镜）；**死尸/无头躯干/装昏必须写死 `completely frozen motionless, zero breathing or swaying`**。【v2.0】
-9. 站位卡只写整段不动的东西；会移动的人写进镜头；≥3 人同场静态戏用 `lock1` 首秒锁位或站位线稿图。【量产 + RH】
-10. 未挂人物参考图绝不写 `silhouette / dark figure`；可变物体画"动作之前"的状态，状态改变换新图。【量产 + v2.0】
+## 三、 官方精简 H3 语法 × `Cinema Studio 4.0 / Hell Grind` 五大导演法则
 
-## 不要做（测过没用或有害）
+无论是直接生成 `jobs.json`（推荐纯导演直写模式），还是通过 `compose_plan.py -> build_episode.py` 编译，每段 15 秒提示词严格遵循 **MiniMax H3 官方 6 段式（`550–850` 英文词黄金甜区）**：
+`subject_definitions` → `summary` → `retention_analysis` → `detailed_description` → `overall_soundscape` → `non_diegetic_music`
 
-未挂母图写黑影、四个子空间共用一张场景图、1.2 秒碎切塞反杀+摸尸、漏锁尸体静止词、把同侧双人拍到铁栅两侧、数量锁、身高数字、对白段用精简提示词、TTS 整句重配。
+详见必读手册：**[playbook/18_U24首要工作流与纯导演官方H3编译规范.md](playbook/18_U24首要工作流与纯导演官方H3编译规范.md)**，核心五条法则：
+1. **D1 去污染与零“全景引力”**：**本镜不入画的元素绝不挂图、绝不写词！** 近景对峙、特写搏杀、微距插切**不要强行挂载全景空景母图**，也不要把全局建筑/家具布局重复写三遍；已挂参考图的人物只用 1–2 句锚定核心辨识特征，把 80% 词数留给 `[Shot 1..N]` 的表演、光影与镜头运动。
+2. **用“物理光学结果”控景别（吸收 `CINEDANCE V4`）**：
+   - 沉浸大景/贴身动作（`84° / 107°` 广角感）：写明物理贴近、空间扩张、直线平直、前后景皆清晰；
+   - 情感孤立/压迫特写（`29° / 18°` 长焦压缩感）：写明长焦压缩背景、奶油虚化、锐利锁定眼眸、前景暗部失焦遮挡占底边 1/3；
+   - 同一镜内不混装“广角大景 + 微距特写”，换景别用明确内部硬切（`HARD CUT / SMASH CUT / INSERT CUT`）。
+3. **操作员级摄影机与自然微表演**：
+   - **完全解禁 `orbit`（环绕）、肩扛跟拍、低机位滑轨、焦点接力**，并写明物理机位高度（`deck level / hip height`）、暗部侧（`shadow side`）与手持呼吸惯性（`shoulder-mounted mass, operator breath`）；
+   - **允许边说边演**：对白与拔刀、逼近、转身融为一体，不再强拆成“先站桩念完再切镜动”；
+   - **彻底取消 `lips pressed shut` 闭唇木偶锁**：非说话人物用真实的生理微表情（冷笑、下颌收紧、呼吸起伏、眼神偏移）演活戏剧张力。
+4. **实体物理与材质惯性**：兵器挥动写重量惯性与停顿反震，雨水/血花写抛物线飞溅，衣摆与长发写运动延迟，避免飘浮 CG 感。
+5. **持续声底 + 逐切镜声效爆点 + 配乐弧线**：在 `overall_soundscape` 与 `non_diegetic_music` 中写出贯穿全段的风浪/环境声底（Audio Bed）、精准踩在碰撞/拔刀切点上的材质音效，以及随情绪起落或骤停留白的电影配乐——用声音节拍牵引 H3 画面剪辑。
+
+---
+
+## 四、 仅保留的 3 项轻量硬护栏（真正防翻车，绝不绑架创意）
+
+1. **护栏 ① · 资产状态机（厚资产是一切一致性的基石）**：
+   - 角色母图死锁灵魂视觉符号（发饰/伤疤/标志配饰），**严禁把未裁切的“三视图设定表”直接当单人母图塞给视频模型**；
+   - 物理形态剧变道具（闭合麻网 vs 挑开麻网、完好信封 vs 撕碎残片）必须拆成独立分态母图，跨两镜过渡，**禁单镜硬变形**；
+   - 音色资产用纯净 `32kHz` 单人声 WAV 锚定 `<Audio N>`。
+2. **护栏 ② · 15 秒语速与节拍容量算账器**：
+   - 使用 `lock_dialogue.py`（或手动硬算：中文 `3.8 字/秒`、英文 `2.5 词/秒` + 动作切换余量）核对每段总耗时，防止自由导演“贪心塞太满”把关键收尾动作（如刀刃落布、门栓震颤）挤出 15 秒边界。
+3. **护栏 ③ · 4 条极简物理与构图底线（D2 内部静默自检，有风险才补一句短锁）**：
+   - **全肯定式描述**：提示词中不写 `no / not / never / without`（改写正面可见物理状态）；
+   - **未挂母图不凭空写陌生黑影**；
+   - **死尸/装昏/昏迷不动**写明 `completely frozen motionless, zero breathing or swaying`；
+   - **起身/登梯/纵深大位移镜头**顺手补一句 `maintain clear headroom framing`（防止头顶出画）。
+
+---
+
+## 五、 标准作业流（双轨任选）
+
+| 轨道 | 适用场景 | 执行链路 |
+| :--- | :--- | :--- |
+| **轨道 A：纯导演直写 `jobs.json`（推荐 · 最高上限）** | 精品横屏/竖屏短剧、电影感强运镜试拍、追求极致流畅度与原创镜头语言 | 导演剧本 → `lock_dialogue.py` 核对台词时长 → 备齐角色/分态道具/声线母图 → 直接按官方 6 段式写 `05_prompts/segXX.txt` + `jobs.json` → `u24_self_hosted_run.py run-jobs` 或 Colab G4 `U24` 出片 |
+| **轨道 B：工程化编译 `plan.json`（长篇批量量产）** | 20–80 集长篇批量生产，需要统一资产表复用与台词防漏检 | `lock_dialogue.py` → `plans/eNN.py`（默认 `compact_prompt=True`、`audio_mode="native-cinema"`、近景可 `scene_ref=None`）→ `compose_plan.py` → `build_episode.py`（已解绑四大紧箍咒）→ `u24_self_hosted_run.py run` |
+
+### 付费 / 上云硬纪律（不变）
+- 任何云端计费或 Colab GPU 运行前清晰汇报任务数与预计耗时/消耗；
+- Colab 出片完毕后必须核验 `colab sessions` 返回 `No active sessions found on server.` 确认零算力残留；
+- 令牌仅存 `.env`，绝不打印或外泄。

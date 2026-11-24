@@ -173,7 +173,8 @@ def light_check(ep, segs):
             print(f"⚠️ {ep} Seg{sg_['id']}：室外场景 {sg_['scene_ref']} 配了室内光 {sg_['light']}——换成室外光预设")
 
 
-def write(ep, title, header, notes, segs, wear=None, per_episode=8, staging_map=None):
+def write(ep, title, header, notes, segs, wear=None, per_episode=None, staging_map=None):
+    """写出 plan_src.json。段数服从剧情与用户要求（一般竖屏推荐 8 段，横屏不限段数，默认自动取 len(segs)）。"""
     staging_map_check(ep, segs, staging_map)
     if ERRS and not os.environ.get("LINT_OK"):
         raise SystemExit(f"{ep}：{len(ERRS)} 处 ❌（规则见 playbook/04 与 defect_rules.py），plan_src 未写出；确认无误可 LINT_OK=1")
@@ -188,7 +189,7 @@ def write(ep, title, header, notes, segs, wear=None, per_episode=8, staging_map=
     d = {"episode": ep, "title": title, "version": "v1", "state_locks": STATE, "header": header, "notes": notes, "segments": segs}
     if staging_map: d["staging_map"] = staging_map
     if wear: d["wear"] = wear
-    if len(segs) != per_episode: d["segments_per_episode"] = len(segs)
+    d["segments_per_episode"] = per_episode if per_episode is not None else len(segs)
     os.makedirs(os.path.join(PIPE, "episodes", ep), exist_ok=True)
     p = os.path.join(PIPE, "episodes", ep, "plan_src.json")
     json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

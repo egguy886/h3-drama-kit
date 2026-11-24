@@ -1,4 +1,4 @@
-"""画面缺陷与空间防穿帮写作规则 v2.0（编译前拦截）。pw.seg() 调用 defect_check。"""
+"""画面缺陷与空间防穿帮写作规则 v2.1（编译前拦截：含单镜单形态 S04 与感官外化 S05）。pw.seg() 调用 defect_check。"""
 import json, os, re
 PIPE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEVEL = {
@@ -6,7 +6,7 @@ LEVEL = {
     "L06": "warn", "L07": "err", "L08": "warn", "L10": "warn", "L11": "warn",
     "L12": "warn", "L13": "warn", "H01": "warn", "L04b": "err", "H02": "warn",
     "L14": "err", "W2": "warn", "W3": "warn",
-    "S01": "err", "S02": "err", "S03": "err",
+    "S01": "err", "S02": "err", "S03": "err", "S04": "err", "S05": "warn",
 }  # SKILL_SYNC_LEVEL
 
 ERRS = []
@@ -41,6 +41,10 @@ R = {
  "S01s": re.compile(r"\b(?:a|one|another)\s+(?:tall\s+|dark\s+|hooded\s+|black-clad\s+|shadowy\s+|mysterious\s+)+(?:silhouette|figure|stranger|intruder|black-clad man)\b", re.I),
  "S02e": re.compile(r"\b(?:headless(?:\s+[\w-]+){0,2}\s+(?:figures?|bodies|corpses?|bandits?|men|guards?|trunks?)|corpses?|dead\s+bod(?:y|ies)|lifeless\s+bod(?:y|ies)|feigning\s+(?:sleep|death|unconsciousness)|playing\s+dead)\b", re.I),
  "S02c": re.compile(r"(?:无头(?:尸|躯干|矿匪)|死尸|尸体|装昏|装睡|假寐)"),
+ "S04w": re.compile(r"\b(?:suspended|hoisted|hanging|mid-air)\b[^.]{0,55}\b(?:net|bundle|sack)\b|\b(?:net|bundle|sack)\b[^.]{0,40}\b(?:suspended|hoisted|over the rail)\b", re.I),
+ "S04o": re.compile(r"\b(?:drops? open|falls? open|spills? open|unfolds?|opens?)\b[^.]{0,65}\brevealing\b", re.I),
+ "S05e": re.compile(r"\b(?:closed eyes|eyes closed)\b[^.]{0,80}\b(?:inhal\w*|smell\w*|scent|sniff\w*|listen\w*)|\b(?:inhal\w*|smell\w*|scent|sniff\w*)\b[^.]{0,80}\b(?:closed eyes|eyes closed)\b", re.I),
+ "S05ok": re.compile(r"\b(?:fingertips?|two fingers|index finger|scrapes?|wipes?|dabs?|pinches?|brings? [^.]{0,25}to (?:her|his) (?:nose|nostrils))\b", re.I),
 }
 GARMENTS = re.compile(r"\b(white (?:dress )?shirt|navy suit|dark suit|suit jacket|T-shirt|t-shirt|tank top|sweater|sweatshirt|hoodie|turtleneck|pajamas|robe|dress|blazer|cardigan)\b", re.I)
 
@@ -108,3 +112,9 @@ def defect_check(sid, shots, props, cast):
         # v2.0 S03: 常规镜 <2.0s 碎切拦截
         if not _LOCK_OR_RELAY.search(t) and not _HIT_OK.search(t) and dur < 2.0 - 1e-6:
             err("S03", k, f"常规叙事/动作镜仅 {dur}s（<2.0s），动作来不及演完即切；请合并或拉长至 2.5–5.0s")
+        # v2.1 S04: 单镜跨拓扑形态硬变拦截（悬空闭网兜→掉落散开露活人）
+        if R["S04w"].search(t) and R["S04o"].search(t):
+            err("S04", k, "同一镜既悬空吊着闭合网兜/包裹又直接散开露人体，模型会在半空提前长出双腿变形；请配 P-NET-BUNDLE 拆为闭合砸水遮挡切 + 下一镜已摊开挑网揭示")
+        # v2.1 S05: 活人无媒介闭眼闻香/听风谜语人告警
+        if not R["S02e"].search(t) and "unconscious" not in t.lower() and R["S05e"].search(t) and not R["S05ok"].search(t):
+            warn("S05", k, "活人无物理媒介原地闭眼闻香/听风易像犯困发呆；请改为睁眼警觉 + 手指刮缆绳水渍/捻物凑鼻等可见物理媒介")

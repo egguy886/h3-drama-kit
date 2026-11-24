@@ -47,7 +47,7 @@ MOVES = {
     "拉": r"\bpulls? (?:out|back)\b",
     "摇": r"\bpans? (?:left|right)\b|\btilts? (?:up|down)\b",
     "移": r"\btrucks? (?:left|right)\b|\bpedestals? (?:up|down)\b|\b(?:rising|rises) slowly\b|\bslowly (?:rising|rises)\b",
-    "环绕": r"\barcs? (?:with|around|slowly)\b|\barc shot\b",
+    "环绕": r"\barcs? (?:with|around|slowly)\b|\barc shot\b|\borbits?\b",
     "跟": r"\btracks? (?:alongside|behind|with|beside)\b|\btracking (?:shot|medium|close-up|wide)\b|\bfollow(?:s|ing)? (?:him|her|them|closely|" + NAMES + r")\b",
     "晃": r"\bshakes? slightly\b|\bhandheld\b",
     "主观": r"\bPOV\b|point of view",
@@ -65,7 +65,8 @@ LOOK = {
     "负空间": r"small at frame-(?:left|right|\{SIDE\})|\bsmall (?:in|at) the (?:lower|upper|edge)",
     "慢动作": r"slow motion|slow-motion",
 }
-BANNED = re.compile(r"bullet time|360-degree|\borbits?\b|\bFPV\b|drone shot|whip[- ]pans?|crash zoom|zooms? in (?:with \w+ amplitude )?at fast speed|cross-dissolve|the shot dissolves|dissolves? into the next|fades? (?:to|from) black|the shot fades|wipe transition|shakes? strongly|double exposure|glitch", re.I)
+# v3.0 解绑：放行 orbits（环绕）、whip-pan、crash zoom 等好莱坞电影运镜；仅拦截视频模型易出穿帮的后期特效/转场词
+BANNED = re.compile(r"bullet time|360-degree|cross-dissolve|the shot dissolves|dissolves? into the next|fades? (?:to|from) black|the shot fades|wipe transition|double exposure|glitch", re.I)
 EMO = re.compile(r"\b(shock|stun|startl|furi|fury|anger|angr|afraid|fear|terrif|smug|grief|horror|disbelie|dread|rage|relie|triumph|panic|guilt|hurt|resolv|resolute|defian|despair|contempt|suspici|alarm|confus|hope|humiliat|betray|devastat|moved|vulnerab|wary|at ease|tender|asham|shame|desperat|sorrow|joy|elat|stricken|haunt|broken|exhaust|determin|wonder|awe|fierce|exult|uneas|unflinch|calm)", re.I)
 LIPS = re.compile(r"lips (?:at rest|stay closed|remain(?:s)? (?:completely )?closed|pressed shut)|back (?:turned )?to (?:the )?camera|from behind|silhouett", re.I)
 WIDE_TALK = re.compile(r"two-shot|medium shot|medium-wide|wide shot|over-the-shoulder|full-body", re.I)
@@ -124,18 +125,11 @@ def extra_lint(ep, plan, warns, errs):
             if sh.get("dialogue"):
                 if SAYVERB.search(body):
                     warns.append(f"{where}：说话句之外还出现 “{SAYVERB.search(body).group(0)}”，会被念出来或自带多余台词")
-                if LIPSPART.search(body):
-                    warns.append(f"{where}：写了 “{LIPSPART.search(body).group(0)}”，会变成真的开口说话；改成抿紧嘴唇或吞咽")
-                if AFTERSPEAK.search(body):
-                    warns.append(f"{where}：说话镜头里放了“说完之后”的动作（吞咽/收嘴），这些放到下一镜")
-                for j in (k - 2, k):
-                    if 0 <= j < len(shots) and LEAVE.search(shots[j]["en"]) and not RELAY.search(shots[j]["en"]):
-                        warns.append(f"{where}：相邻镜头 {j + 1} 里有人离场/背景人物，台词镜会压缩它的帧数；换位置或把台词镜挪远")
-                        break
             elif SAYVERB.search(body) and not re.search(r"\bsay(?:s)? (?:nothing|no)\b", body):
                 warns.append(f"{where}：无台词镜头里出现 “{SAYVERB.search(body).group(0)}”，会被念出来")
-            if COLLIDE.search(en):
-                warns.append(f"{where}：写了接触/碰撞/液体 “{COLLIDE.search(en).group(0)}”，H3 画不出接触因果；拍扫过画面→切→已发生的结果")
+            # v3.0 新增：登梯/起身纵深大位移镜头提醒保留头顶构图余量（headroom）
+            if re.search(r"\b(?:climb(?:s|ing)?|strides? up|mounts?|ascend(?:s|ing)?)\b[^.]{0,40}\b(?:stairs?|steps?|ladder)\b", en, re.I) and not re.search(r"headroom|tilts? (?:smoothly )?up|keeps? (?:his|her|their) head", en, re.I):
+                warns.append(f"{where}：含登梯纵向起身位移，建议加一句 'maintain clear headroom framing' 或顺势微仰，防止头顶出画")
             if UNITS.search(en):
                 warns.append(f"{where}：写了带单位的距离 “{UNITS.search(en).group(0)}”，会被忽略甚至渲染成接触；改成相对关系或画面内参照物")
             if HANDSIDE.search(en):
@@ -178,8 +172,7 @@ def causal_lint(ep, plan, warns):
             if RELAY.search(en):
                 continue
             if not sh.get("dialogue"):
-                if FACE.search(en) and not SHUT.search(en):
-                    warns.append(f"{where}：对白段里拍到脸的无台词镜头没写闭嘴，H3 容易让这张脸也动嘴；加 lips at rest / lips pressed together")
+                # v3.0 解绑：取消强制 lips pressed shut 木偶闭唇锁，归还非说话人物的自然微表情与冷笑/呼吸空间
                 continue
             t = lines.get(sh["dialogue"], "")
             if t.rstrip().endswith("?") and DEIXIS.search(t):
@@ -238,13 +231,9 @@ def break_lint(ep, plan, warns, errs=None):
                 elif ACTIONV.search(last["en"]) or any(re.search(MOVES[m], last["en"], re.I) for m in ("推", "拉", "摇", "移", "环绕", "跟")):
                     warns.append(f"{ep} Seg{sid}→{sid + 1}：接力缝落在动作或运镜中段（{last['storyboard_cn'][:20]}）；改成硬切换景别，或让上一段停在静止的一拍")
             elif same and n_ep >= 51 and size_of(last["en"]) == "全景" and size_of(first["en"]) == "全景":
-                (errs if errs is not None else warns).append(f"{ep} Seg{sid}→{sid + 1}：同场景硬切，全景接全景（跳帧感）；新段改用中景/近景/过肩开场")
+                warns.append(f"{ep} Seg{sid}→{sid + 1}：同场景硬切，全景接全景（容易跳帧感）；建议新段改用中景/近景/过肩开场")
             elif same and size_of(last["en"]) and size_of(last["en"]) == size_of(first["en"]):
-                warns.append(f"{ep} Seg{sid}→{sid + 1}：同场景硬切，但新段开场景别和上一段结尾一样（{size_of(first['en'])}）；新段换景别开场（远景↔近景↔过肩）")
-            if same and n_ep >= 51 and s["connection_to_next"] == "HARD_CUT" and s.get("seam_motive") not in ("action", "gaze", "sound"):
-                (errs if errs is not None else warns).append(f"{ep} Seg{sid}→{sid + 1}：同场景每条硬切缝要有动机——在该段写 seam_motive：action / gaze / sound")
-            if not same and not any(WIDE.search(x["en"]) for x in nxt["shots"][:3]):
-                warns.append(f"{ep} Seg{sid + 1}：换了场景，前三镜没有地点标点远景（wide / aerial / establishing）")
+                warns.append(f"{ep} Seg{sid}→{sid + 1}：同场景硬切，新段开场景别与上一段结尾相同（{size_of(first['en'])}）")
     if relays > 2:
         warns.append(f"{ep}：{relays} 条接力缝（同场景一律硬切换景别；带理由的接力也建议一集 ≤2 条）")
     if rolls > 1:
@@ -256,7 +245,7 @@ HIT = re.compile(r"\b(punch\w*|strik\w*|kick\w*|slam\w*|smash\w*|tackl\w*|elbow\
 LOCK1 = re.compile(r"silent one-second position-lock|position-lock frame", re.I)
 DIAGLOCK = re.compile(r"staging diagram|positions-only map", re.I)
 
-# ---- v2.0 新增：空间站位、单镜 2.5–5.0s 硬门禁与防穿帮四大规则 ----
+# ---- v2.0/v2.1：空间站位、单镜 2.5–5.0s 硬门禁、单镜单形态与感官外化规则 ----
 _UNMOUNTED_PLURAL_RX = re.compile(
     r"\b(?:two|three|four|several|multiple)\s+(?:tall\s+|dark\s+|hooded\s+|black-clad\s+|shadowy\s+|hulking\s+|coarse-robed\s+)*(?:silhouettes?|figures?|human shadows?|strangers?|intruders?|guards?|bandits?|men)\b",
     re.I,
@@ -274,6 +263,12 @@ _STILL_LOCK_RX = re.compile(r"completely frozen motionless,\s*zero breathing or 
 _THRU_BARS_RX = re.compile(r"framed through[^.]{0,35}\bbars\b", re.I)
 _GRIP_BARS_RX = re.compile(r"gripping the (?:iron |wooden )?bars?\b", re.I)
 _LOOT_RX = re.compile(r"\b(?:pulls?|takes?|draws?|snatches?)\b[^.]{0,45}\b(?:key|dagger|knife|pouch|packet|bun)\b", re.I)
+# v2.1 S04: 悬空闭兜网/包裹在同一镜内散开变活人（易半空长出双腿变形）
+_SUSPENDED_WRAP_RX = re.compile(r"\b(?:suspended|hoisted|hanging|mid-air)\b[^.]{0,55}\b(?:net|bundle|sack)\b|\b(?:net|bundle|sack)\b[^.]{0,40}\b(?:suspended|hoisted|over the rail)\b", re.I)
+_OPEN_REVEAL_BODY_RX = re.compile(r"\b(?:drops? open|falls? open|spills? open|unfolds?|opens?)\b[^.]{0,65}\brevealing\b[^.]{0,45}<Subject \d+>", re.I)
+# v2.1 S05: 活人无媒介闭眼闻香/听风谜语人检测
+_CLOSED_EYES_SENSE_RX = re.compile(r"\b(?:closed eyes|eyes closed)\b[^.]{0,80}\b(?:inhal\w*|smell\w*|scent|sniff\w*|listen\w*)|\b(?:inhal\w*|smell\w*|scent|sniff\w*)\b[^.]{0,80}\b(?:closed eyes|eyes closed)\b", re.I)
+_PHYSICAL_CARRIER_RX = re.compile(r"\b(?:fingertips?|two fingers|index finger|scrapes?|wipes?|dabs?|pinches?|brings? [^.]{0,25}to (?:her|his) (?:nose|nostrils))\b", re.I)
 
 
 def _subspace_key(seg):
@@ -354,6 +349,14 @@ def staging_and_rigor_lint(ep, plan, warns, errs, allow_legacy=False):
             if (_CORPSE_EN_RX.search(en_nodlg) or _CORPSE_CN_RX.search(cn_nodlg)) and not _STILL_LOCK_RX.search(en_nodlg):
                 sink.append(f"{where}：[静止死锁缺失] 含尸体/无头躯干/装昏状态，必须在镜头英文内写死 'completely frozen motionless, zero breathing or swaying'")
 
+            # 4b) v2.1 S04: 单镜跨拓扑形态硬渐变拦截（悬空闭网兜→掉落散开露活人）
+            if _SUSPENDED_WRAP_RX.search(en_nodlg) and _OPEN_REVEAL_BODY_RX.search(en_nodlg):
+                sink.append(f"{where}：[S04 单镜跨形态硬变] 同一镜既悬空吊着闭合网兜/包裹又直接掉落散开露人体，模型会在半空提前长出双腿变形；请拆为 P-NET-BUNDLE 闭合砸水遮挡切 + 下一镜已摊开挑网揭示")
+
+            # 4c) v2.1 S05: 隐形感官闭眼谜语人告警
+            if not CORPSE_OR_STILL.search(en_nodlg) and _CLOSED_EYES_SENSE_RX.search(en_nodlg) and not _PHYSICAL_CARRIER_RX.search(en_nodlg):
+                warns.append(f"{where}：[S05 感官外化] 活人角色无物理媒介原地闭眼闻香/听风，画面易像犯困发呆；请改为睁眼警觉 + 手指刮缆绳渗水/捻物凑鼻等可见物理动作")
+
             # 5) 隔断物同侧正反打反切检测
             if _THRU_BARS_RX.search(en_nodlg):
                 thru_bar_shots.append(k)
@@ -382,7 +385,8 @@ def rh_lint(ep, plan, warns):
         _cast_lib = json.load(open(_cast_p, encoding="utf-8")) if os.path.isfile(_cast_p) else {}
         cast_n = len([r for r in s.get("refs", []) if len(r) > 2 and r[2] and str(r[2]).startswith(("C", "X")) and _cast_lib.get(str(r[2]), {}).get("kind") != "creature"])
         has_talk = any(sh.get("dialogue") for sh in shots)
-        if cast_n >= 3 and has_talk and shots and not LOCK1.search(shots[0]["en"]) and not RELAY.search(shots[0]["en"]):
+        # v2.2: 不再强制 ≥3 人对话段加 1.0s lock1（实测 3 栏角色卡/空场景母图配 lock1 易导致首秒原图贴图闪现；改由首帧 start 描述 + 首镜直接进实景运动）
+        if False and cast_n >= 3 and has_talk and shots and not LOCK1.search(shots[0]["en"]) and not RELAY.search(shots[0]["en"]):
             warns.append(f"{ep} Seg{sid}：{cast_n} 人同场对话、开头不是「静默锁位首秒」——写 lock1 拿到 1 秒站位全景再切")
 
 
@@ -487,10 +491,7 @@ def lint(ep, only=None, allow_legacy=False):
                 warns.append(f"{ep} Seg{sg['id']} 镜1：开场全景镜头不动（{sg['shots'][0]['dur']}s 的 static wide）——改成镜头缓推/拉/横移/升降，并写一个持续的动作")
             elif WIDE.search(f0) and not ACTV.search(f0) and sg["shots"][0]["dur"] >= 1.8:
                 warns.append(f"{ep} Seg{sg['id']} 镜1：开场全景里没有持续的动作词；写一个连续动作，让画面从第 0 秒就在动")
-        if segs and not cont:
-            first = segs[0]["shots"]
-            if not ESTAB.search(first[0]["en"]) and not any(re.search(r"wide (?:static |tracking )?shot|position-lock", x["en"], re.I) for x in first[:3]):
-                warns.append(f"{ep} Seg1：前三镜里没有交代空间的全景（要会动的全景，或多人静态戏用「静默锁位首秒」）")
+        # v3.0 解绑：允许冷开场直接用感官微距/人物特写切入，不再强制要求前三镜必须塞全景报幕
     if only != "group":
         extra_lint(ep, plan, warns, errs)
         break_lint(ep, plan, warns, errs)

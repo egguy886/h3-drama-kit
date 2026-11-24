@@ -63,12 +63,14 @@ def find_asset(bid):
     return cands[-1]
 
 
-def run_retry(cmd, retries=4, delay=3, capture=False):
+def run_retry(cmd, retries=8, delay=5, capture=False, allow_fail=False):
     for i in range(1, retries + 1):
         r = subprocess.run(cmd, text=True, capture_output=capture)
         if r.returncode == 0:
             return r.stdout if capture else ""
         if i == retries:
+            if allow_fail:
+                return None
             err_tail = (r.stderr or r.stdout or "")[-400:] if capture else ""
             raise SystemExit(f"命令重试 {retries} 次仍失败：{' '.join(cmd)}\n{err_tail}")
         time.sleep(delay)
@@ -277,9 +279,17 @@ def main():
         run_retry([COLAB, "exec", "-s", a.session, "-f", setup_f, "--timeout", "600"])
         run_retry([COLAB, "exec", "-s", a.session, "-f", daemon_f, "--timeout", "60"])
 
+        miss_streak = 0
         while True:
             time.sleep(a.poll_sec)
-            raw = run_retry([COLAB, "exec", "-s", a.session, "-f", check_f, "--timeout", "30"], capture=True)
+            raw = run_retry([COLAB, "exec", "-s", a.session, "-f", check_f, "--timeout", "30"], retries=4, delay=4, capture=True, allow_fail=True)
+            if not raw:
+                miss_streak += 1
+                print(f"[巡检网络抖动重试 {miss_streak}/6] 等待下一轮保活巡检...", flush=True)
+                if miss_streak >= 6:
+                    raise SystemExit("连续 6 轮无法连接 Colab 实例，终止并触发自动关机")
+                continue
+            miss_streak = 0
             m = re.search(r"\{.*\}", raw, re.S)
             if not m:
                 continue
@@ -306,8 +316,15 @@ def main():
             print(f"[拼接完成] {prev}", flush=True)
     finally:
         if not a.keep_alive:
-            subprocess.run([COLAB, "stop", "-s", a.session])
-            subprocess.run([COLAB, "sessions"])
+            for attempt in range(1, 11):
+                subprocess.run([COLAB, "stop", "-s", a.session])
+                chk = subprocess.run([COLAB, "sessions"], text=True, capture_output=True)
+                out = (chk.stdout or "") + (chk.stderr or "")
+                print(out.strip(), flush=True)
+                if chk.returncode == 0 and ("No active sessions" in out or a.session not in out):
+                    print(f"[安全停机已确认] 会话 {a.session} 已销毁。", flush=True)
+                    break
+                time.sleep(5)
 
 
 if __name__ == "__main__":
