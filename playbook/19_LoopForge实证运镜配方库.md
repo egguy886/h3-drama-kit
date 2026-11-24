@@ -40,5 +40,9 @@
    - ✅ `expression shifts from wary calculation into furious desperation as his brow tightens and jaw locks`
 2. **纵向起身 / 登梯防切头顶（Headroom Lock）**：
    - 凡角色起身、踏上楼梯、纵深冲向高台，必补：`the camera tilts smoothly upward and tracks slightly wider to maintain clear headroom framing above her entire head`。
-3. **声音槽位零硬件污染**：
-   - `overall_soundscape` 与 `non_diegetic_music` 中**严禁出现 `camera / lens / drone / rig / dolly`** 等硬件词（会把器材画进画面或拖死运镜）。
+3. **声音槽位零硬件污染 + 严禁原生 BGM（`non_diegetic_music: N/A`）**：
+   - `overall_soundscape` 满血写现场环境声底与动作音效，**严禁出现 `camera / lens / drone / rig / dolly`** 等硬件词；`non_diegetic_music` 一律写 `N/A`（避免每 15 秒曲风不同难以拼接，BGM 成片后统一配）。
+4. **跨 15 秒段无缝连戏三铁律（v3.2 必守）**：
+   - **180° 银幕左右轴线死锁**：同场内固定双方左右侧（如甲板戏姜无音锁 `screen-left` 朝右，老赵锁 `screen-right` 朝左）；拍画左人物的过肩镜（OTS），虚化前景肩影必须在 **`right foreground edge`**（写反必越轴翻转！）；
+   - **段尾定姿 = 下段起姿 0.1s 咬合**：连续时间相邻段，上一段尾镜结束的高低姿态（站/单膝跪/平躺/登顶立定）、手持物与贴靠物（如背贴主桅、刀鞘顶胸），下一段首镜第 0 秒必须 1:1 承接，仅换景别/角度；
+   - **说话人必入画露脸**：凡有 `<d>` 台词的镜头，说话角色本人必须在焦点内清晰露脸张口。

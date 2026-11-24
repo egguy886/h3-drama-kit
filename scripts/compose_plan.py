@@ -51,7 +51,7 @@ plan = {"episode": src["episode"], "title": src["title"], "version": src.get("ve
         "segment_sec": 15.0, "segments_per_episode": src.get("segments_per_episode", len(src.get("segments", [])) or 8),
         "aspect": ASPECT,
         "compact_prompt": src.get("compact_prompt", True),
-        "audio_mode": src.get("audio_mode", "native-cinema"),
+        "audio_mode": src.get("audio_mode", "sfx-only"),
         "styles": {k: v["en"] for k, v in styles.items()},
         "storyboard_header": src.get("header", []), "review_notes": src.get("notes", []),
         "dialogue_headroom_min": src.get("dialogue_headroom_min", 0.3),
@@ -217,8 +217,9 @@ for s in src["segments"]:
     if people_cn:
         parts.append(f"画面里只有这{CN_NUM[len(people_cn)] if len(people_cn) <= 10 else len(people_cn)}个人" + ("，每人只说引号里的台词。" if speakers else "。") if len(people_cn) > 1 else f"画面里只有 {people_cn[0]} 一个人。")
     parts.append("最终发展线：" + cn.get("dev", ""))
-    music_en = s.get("music") or ("N/A" if plan["audio_mode"] == "dry-stem" else "Subtle atmospheric film score matching the scene's dramatic tension and pacing.")
-    music_cn = s.get("music_cn") or ("本段为干声模式，配乐留给后期。" if plan["audio_mode"] == "dry-stem" else "原生音画联合生成环境声底与电影配乐。")
+    # v3.2 实证升级：默认 sfx-only（满血原生环境声底 + 动作材质音效 SFX，严禁生成原生 BGM 以免每15秒曲风跳切；BGM 留成片拼接后统一配）
+    music_en = s.get("music") if plan["audio_mode"] == "native-bgm" else "N/A"
+    music_cn = s.get("music_cn") if plan["audio_mode"] == "native-bgm" else "满血生成原生环境声底与动作音效，不生成原生BGM（配乐留成片拼接后统一铺设）。"
     wenwu = {"open": "".join(parts), "perf": cn.get("perf", ""), "sound": cn.get("sound", "") + music_cn,
              "visual": cn.get("visual", "")}
 
